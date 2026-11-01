@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Box Ctrl</title>
+<meta name="description" content="Labels for tool boxes, sized to the box you own. Runs in your browser.">
+<meta name="theme-color" content="#141311">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="styles.css">
+<style id="pageSize"></style>
+<script>try{var t=localStorage.getItem("boxctrl.theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t}catch(e){}</script>
+</head>
+<body>
+<div class="bench">
+<!--STRIP-->
+
+<header class="top">
+  <div class="brand">
+    <h1>Box Ctrl</h1>
+    <span class="by">Labels for tool boxes, sized to the box you own</span>
+    <span class="by mono">· x0.0.1</span>
+    <span class="tag" id="tourTag" hidden>Tutorial · sample list</span>
+  </div>
+  <div class="leds" aria-live="polite">
+    <span class="led" id="ledTemplate"><i></i>Template</span>
+    <span class="led" id="ledBoxes"><i></i>Boxes</span>
+    <span class="led" id="ledSheets"><i></i>Sheets</span>
+    <button type="button" class="guidelink" id="tourBtn" style="background:transparent;cursor:pointer;font-family:inherit"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.500"/><path d="M10 8.500l5.500 3.500-5.500 3.500Z"/></svg>Tutorial</button>
+    <a href="guide.html" class="guidelink"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6.500C10 5 7 4.500 3.500 4.500v14c3.500 0 6.500.5 8.500 2 2-1.500 5-2 8.500-2v-14C17 4.500 14 5 12 6.500Zm0 0v14"/></svg>User guide</a>
+    <!--THEME-->
+  </div>
+</header>
+
+<section class="tier" aria-labelledby="a1">
+  <div class="tier-h"><span class="n">1</span><h2 id="a1">Template Design</h2><span class="tier-d">What every label shares: the box, your mark and your owner line</span><span class="tier-s idle" id="a1State"></span></div>
+  <div class="pad">
+    <div class="strips" id="a1Strips" aria-live="polite"></div>
+    <div id="panel1" hidden></div>
+    <div class="split">
+      <div class="stack">
+        <label class="f" id="hlBox"><span>Box size</span><span class="tm"><select id="profile" aria-label="Box size"></select></span></label>
+        <div class="fields" id="customFields" hidden>
+          <label class="f"><span>Width, mm</span><input class="in m" id="customW" inputmode="decimal"></label>
+          <label class="f"><span>Height, mm</span><input class="in m" id="customH" inputmode="decimal"></label>
+        </div>
+        <div class="f" id="hlMark"><span>Your mark · prints bottom right of every label</span>
+          <div class="segc" role="group" aria-label="Your mark" id="markSeg">
+            <button type="button" data-mark="up">Upload logo</button><button type="button" data-mark="text">Text mark</button><button type="button" data-mark="icon">Icon</button><button type="button" data-mark="none">None</button>
+          </div>
+        </div>
+        <div id="dropWrap" class="stack" style="gap:5px">
+          <div class="drop" id="drop"><span>Drop your logo here, or</span><button class="key" type="button" id="chooseLogo"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V4M7.500 8.500 12 4l4.500 4.500M4.500 15v3.500a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V15"/></svg>Choose logo file</button></div>
+          <p class="small note">PNG, JPEG, WebP or SVG, up to 5 MB. Use a logo you own or have permission to use.</p>
+        </div>
+        <div class="drop" id="fileRow" hidden><span class="mono" id="fileName"></span><span class="tools"><button class="key" type="button" id="replaceLogo">Replace logo</button><button class="key" type="button" id="removeLogo">Remove</button></span></div>
+        <div class="fields" id="textFields" hidden>
+          <label class="f"><span>Text mark</span><input class="in" id="textMark" maxlength="16"></label>
+          <div class="f"><span>Frame</span><div class="segc" role="group" aria-label="Frame" id="frameSeg"><button type="button" data-frame="none">None</button><button type="button" data-frame="rule">Rule</button><button type="button" data-frame="box">Box</button></div></div>
+        </div>
+        <div class="tools" id="iconMarkRow" hidden><button class="key" type="button" id="chooseMarkIcon">Choose an icon</button></div>
+        <label class="f" id="hlOwner"><span>Owner line · prints bottom left of every label</span><input class="in" id="owner" maxlength="32" placeholder="PROPERTY OF YOUR SHOP"></label>
+      </div>
+      <div class="stack">
+        <span class="micro" id="art1Name"></span>
+        <canvas id="art1" role="img" aria-label="Label preview at true proportion"></canvas>
+        <span class="small">Outlined: your footer, the same on every label. The rest changes with each box in Label Information. Dashed line: where the label is cut.</span>
+        <dl class="read" id="readout"></dl>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="tier" aria-labelledby="a2" id="area2">
+  <div class="tier-h"><span class="n">2</span><h2 id="a2">Label Information</h2><span class="tier-d">What's different on each label: say what's in each box</span><span class="tier-s idle" id="a2State"></span></div>
+  <div class="pad">
+    <div class="strips" id="a2Strips" aria-live="polite"></div>
+    <div class="tools">
+      <button class="key" type="button" id="add"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Add box</button>
+      <button class="key" type="button" id="openGroups"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12.600 3.500H4.500a1 1 0 0 0-1 1v8.100a1 1 0 0 0 .3.700l7.400 7.400a1 1 0 0 0 1.400 0l8.100-8.100a1 1 0 0 0 0-1.400L13.300 3.800a1 1 0 0 0-.7-.3Z"/><circle cx="8.500" cy="8.500" r="1.200"/></svg>Manage groups</button>
+      <label class="tools small" style="gap:5px">ID prefix <input class="in m" id="prefix" maxlength="8" style="width:89px" aria-label="ID prefix"></label>
+      <span class="sp"></span>
+      <button class="key" type="button" id="openFile"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.500 19V6a1.500 1.500 0 0 1 1.500-1.500h4.500l2 2.500H19a1.500 1.500 0 0 1 1.500 1.500V19a1.500 1.500 0 0 1-1.500 1.500H5A1.500 1.500 0 0 1 3.500 19Z"/></svg>Open file</button>
+      <a class="key" href="box-ctrl-template.xlsx" download><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.500" y="4.500" width="17" height="15" rx="1.500"/><path d="M3.500 9.500h17M3.500 14.500h17M10 4.500v15"/></svg>Get template</a>
+      <button class="key" type="button" id="exportList"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V4M7.500 8.500 12 4l4.500 4.500M4.500 15v3.500a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V15"/></svg>Export list</button>
+      <span class="tag" id="examples" hidden>Examples</span>
+    </div>
+    <div id="panel" hidden></div>
+    <div class="split r">
+      <div style="min-width:0">
+        <div id="boxes"></div>
+        <p class="small mono" id="fill" style="margin:8px 8px 0"></p>
+      </div>
+      <div class="stack">
+        <span class="micro" id="art2Name"></span>
+        <canvas id="art2" role="img" aria-label="The selected box, as printed"></canvas>
+        <span class="small">The group name never prints.</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="tier" aria-labelledby="a3">
+  <div class="tier-h"><span class="n">3</span><h2 id="a3">Label Print</h2><span class="tier-d">Choose how you print, then save or print</span><span class="tier-s idle" id="a3State"></span></div>
+  <div class="pad">
+    <div class="strips" id="a3Strips" aria-live="polite"></div>
+    <div class="tools">
+      <div class="segc" role="group" aria-label="Print route" id="routeSeg"><button type="button" data-route="liene">Liene PixCut</button><button type="button" data-route="office">Office printer</button></div>
+      <span class="small mono" id="routeSize"></span>
+    </div>
+    <div class="split r">
+      <div class="stack">
+        <p class="small note" id="sheetNote" hidden></p>
+        <div class="sheets" id="sheets"></div>
+      </div>
+      <div class="stack">
+        <div class="stack" id="lienePanel">
+          <span class="micro">Liene app settings</span>
+          <p class="small note">Made for the <a href="https://www.liene-life.com/products/pixcut-s1-photo-sticker-printer-and-cutter">Liene PixCut S1</a>. Only tested on this printer, with the <a href="https://www.liene-life.com/pages/liene-photo-app-for-pixcut">Liene Photo</a> Mac app. Liene 4 × 7 sticker paper.</p>
+          <div class="fields">
+            <label class="f"><span>Cut border, mm</span><input class="in m" id="B" inputmode="decimal"></label>
+            <label class="f"><span>Space between cuts, mm</span><input class="in m" id="G" inputmode="decimal"></label>
+          </div>
+          <div class="setv">
+            <div><span class="small">W</span><b>90.0</b></div>
+            <div><span class="small">H</span><b>170.0</b></div>
+            <div><span class="small">X</span><b>0.0</b></div>
+            <div><span class="small">Y</span><b>0.0</b></div>
+          </div>
+          <ul class="setl">
+            <li>Lock: on</li>
+            <li>Cutting mode: Separate</li>
+            <li>Border: <span class="mono" id="borderOut">1.5</span></li>
+            <li>AI remove background: off</li>
+          </ul>
+        </div>
+        <div class="stack" id="officePanel" hidden>
+          <span class="micro">Print settings</span>
+          <div class="f"><span>Paper</span><div class="segc" role="group" aria-label="Paper" id="paperSeg"><button type="button" data-paper="letter">Letter</button><button type="button" data-paper="a4">A4</button></div></div>
+          <p class="small note">Set Scale to 100 %, and use card stock. For Systainer cards, 135 gsm or heavier. Check that the line on the page measures 50 mm, then trim on the crop marks.</p>
+          <dl class="read" id="officeRead"></dl>
+        </div>
+        <button class="key go" type="button" id="save"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11M7.500 10.500 12 15l4.500-4.500M4.500 15v3.500a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V15"/></svg><span id="saveText">Save sheets</span></button>
+        <span class="small" id="saveNote" role="status"></span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!--FOOTER-->
+</div>
+<div id="printArea" aria-hidden="true"></div>
+<input type="file" id="file" accept=".json,.xlsx,.xls,.csv" hidden>
+<input type="file" id="logoInput" accept=".png,.jpg,.jpeg,.webp,.svg,image/png,image/jpeg,image/webp,image/svg+xml" hidden>
+<script type="module" src="app.js"></script>
+<script src="chrome.js"></script>
+</body>
+</html>
