@@ -57,7 +57,7 @@ export const contentsColour = (ink, band) => { const m = mix(ink, band, 0.85); r
 
 export const OTHER = 'other';
 // Spelled as each maker writes its name online (BX-R39)
-export const MAKERS = [['festool', 'Festool', 'Green'], ['milwaukee', 'Milwaukee', 'Red'], ['dewalt', 'DEWALT', 'Gold'], ['bosch', 'Bosch', 'Blue'], ['makita', 'Makita', 'Teal']];
+export const MAKERS = [['festool', 'Festool', 'Green'], ['milwaukee', 'Milwaukee', 'Red'], ['dewalt', 'DEWALT', 'Steel'], ['bosch', 'Bosch', 'Blue'], ['makita', 'Makita', 'Teal']];
 export const startGroups = () => [
   ...MAKERS.map(([id, name, colour]) => ({ id, name, color: hex(colour) })),
   { id: 'power', name: 'Power tools', color: hex('Forest') }, { id: 'hand', name: 'Hand tools', color: hex('Black') },

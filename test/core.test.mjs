@@ -246,6 +246,16 @@ test('BX-A81 the printer notice opens both pages', () => {
     assert.match(note, /Printer required/); assert.match(note, /liene-life\.com\/products\/pixcut-s1/); assert.doesNotMatch(note, /<button/);
   }
 });
+test('BX-A84 the independence notice follows the printer notice', () => {
+  for (const f of ['index.html', 'guide.html']) {
+    const p = page(f), at = p.indexOf('id="independentNote"');
+    assert.ok(at > p.indexOf('id="printerNote"') && at < p.indexOf('<section', p.indexOf('</header>')), f);
+    const note = p.slice(at, p.indexOf('</div>', at));
+    for (const t of ['no connection', 'permission', 'condone', 'Festool', 'Milwaukee', 'DEWALT', 'Bosch', 'Makita', 'Liene']) assert.ok(note.includes(t), t);
+    assert.doesNotMatch(note, /<button/);
+  }
+});
+test('BX-A85 DEWALT starts in Steel', () => assert.equal(c.startGroups().find((g) => g.name === 'DEWALT').color, c.PALETTE.find((p) => p.name === 'Steel').hex));
 test('BX-A82 what you need covers both routes', () => {
   const need = page('guide.html').match(/<section id="need">.*?<\/section>/s)[0];
   for (const t of ['Liene PixCut S1', 'office printer', 'Save as PDF', "haven't been tested"]) assert.ok(need.includes(t), t);
