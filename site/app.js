@@ -5,7 +5,7 @@ import { searchCatalog, CATALOG_DATE, BRANDS } from './catalog.js';
 
 const $ = (id) => document.getElementById(id);
 const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
-const KEY = 'boxctrl.v1', SEEN = 'boxctrl.tourSeen';
+const KEY = 'boxctrl.v1', SEEN = 'boxctrl.tourSeen', READ = 'boxctrl.noticesRead', NOTICE_VERSION = '1';
 const X_ICON = '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>';
 const PLUS_ICON = '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>';
 const POINTER = '<svg class="ic solid" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5l10 7-10 7Z"/></svg>';
@@ -573,6 +573,19 @@ function coach() {
   d.append(el('span', 'micro', `Step ${t.step + 1} of ${TOUR.length} · ${step.title}`), el('p', 'note', step.words), tools);
   return d;
 }
+// The two top notices stay until someone says they've read them (BX-U22)
+let noticesHidden = false;
+try { noticesHidden = localStorage.getItem(READ) === NOTICE_VERSION; } catch { /* storage unavailable */ }
+function showNotices() {
+  ['printerNote', 'independentNote', 'noticeAck'].forEach((id) => { $(id).hidden = noticesHidden; });
+  $('showNotices').hidden = !noticesHidden; $('noticesRead').checked = false;
+}
+function setNotices(hide) {
+  noticesHidden = hide;
+  try { if (hide) localStorage.setItem(READ, NOTICE_VERSION); else localStorage.removeItem(READ); } catch { /* storage unavailable */ }
+  showNotices();
+}
+
 function dismissOffer() { S.tourSeen = true; try { localStorage.setItem(SEEN, '1'); } catch { /* storage unavailable */ } }
 
 // ---------- refresh ----------
@@ -750,6 +763,9 @@ $('openFile').onclick = () => $('file').click();
 $('file').onchange = (e) => { openFile(e.target.files[0]); e.target.value = ''; };
 $('exportList').onclick = exportList;
 $('exportCsv').onclick = exportCsv;
+$('noticesRead').onchange = () => setNotices(true);
+$('showNotices').onclick = () => setNotices(false);
+showNotices();
 $('save').onclick = () => (S.route === 'office' ? printOffice() : saveSheets());
 $('tourBtn').onclick = startTour;
 

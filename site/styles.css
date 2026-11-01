@@ -174,6 +174,11 @@ details.alltools[open]>summary::after{content:"▴";color:var(--accent-text)}
 .coach{border-color:var(--accent)}
 .hl{outline:2px solid var(--accent);outline-offset:5px;border-radius:3px}
 .textcol{display:flex;align-items:center;gap:5px;font-size:var(--t-micro);color:var(--soft)}
+.listrows{border-top:1px solid var(--accent);padding-top:21px}
+.noticeack{display:flex;gap:8px;align-items:center;min-height:32px;font-size:var(--t-cap);color:var(--soft);cursor:pointer}
+.noticeack input{width:18px;height:18px;margin:0;accent-color:var(--ink)}
+.noticeshow:has([hidden]){display:none}
+
 @media print{
   @page{margin:0}
   body{padding:0;background:#fff}
@@ -185,7 +190,7 @@ details.alltools[open]>summary::after{content:"▴";color:var(--accent-text)}
 #printArea{display:none}
 
 @media (pointer:coarse){
-  .in,.key,.tm,.guidelink,.segc button,.theme button{min-height:44px}
+  .in,.key,.tm,.guidelink,.segc button,.theme button,.noticeack{min-height:44px}
   .key.sq,.theme button,.swb,.swc{min-width:44px;min-height:44px}
   .swb{padding:13px}
   details.alltools>summary{min-height:44px}

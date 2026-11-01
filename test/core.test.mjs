@@ -241,7 +241,7 @@ const page = (f) => readFileSync(new URL(`../site/${f}`, import.meta.url), 'utf8
 test('BX-A81 the printer notice opens both pages', () => {
   for (const f of ['index.html', 'guide.html']) {
     const p = page(f), after = p.slice(p.indexOf('</header>') + 9).trimStart();
-    assert.ok(after.startsWith('<div class="health warn" id="printerNote">'), f);
+    assert.match(after, /^<div class="health warn" id="printerNote"( hidden)?>/, f);
     const note = after.slice(0, after.indexOf('</div>'));
     assert.match(note, /Printer required/); assert.match(note, /liene-life\.com\/products\/pixcut-s1/); assert.doesNotMatch(note, /<button/);
   }
@@ -267,6 +267,11 @@ test('BX-A88 untested sizes print as Strips within the custom limits', () => {
     const [W, H] = p.sticker, l = c.layout(box(), W, H, 1.5, () => 0.6, true, '');
     assert.equal(l.strip, true, p.id); assert.ok(W <= c.CUSTOM.W.max && H >= c.CUSTOM.H.min, p.id); assert.ok(c.lieneCapacity(W, H, { B: 1.5, G: 1.9 }).n >= 1, p.id);
   }
+});
+test('BX-A89 only the app can hide the notices', () => {
+  assert.match(page('index.html'), /id="noticesRead"/); assert.match(page('index.html'), /id="showNotices"/);
+  assert.doesNotMatch(page('guide.html'), /noticesRead|id="printerNote" hidden|id="independentNote" hidden/);
+  assert.match(page('index.html'), /class="foot"[\s\S]*not affiliated/);
 });
 test('BX-A82 what you need covers both routes', () => {
   const need = page('guide.html').match(/<section id="need">.*?<\/section>/s)[0];

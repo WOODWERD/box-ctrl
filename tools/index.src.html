@@ -20,7 +20,7 @@
   <div class="brand">
     <h1>Box Ctrl</h1>
     <span class="by">Labels for tool boxes, sized to the box you own</span>
-    <span class="by mono">· x0.0.7</span>
+    <span class="by mono">· x0.0.8</span>
     <span class="tag" id="tourTag" hidden>Tutorial · sample list</span>
   </div>
   <div class="leds" aria-live="polite">
@@ -33,15 +33,16 @@
   </div>
 </header>
 
-<div class="health warn" id="printerNote">
+<div class="health warn" id="printerNote" hidden>
   <b>Printer required</b>
   <span>Box Ctrl prints sheets for a Liene PixCut S1, the only sticker printer it has been tested on, or pages for an office printer that you trim by hand.</span>
   <a class="key" href="https://www.liene-life.com/products/pixcut-s1-photo-sticker-printer-and-cutter">View the printer</a>
 </div>
-<div class="health" id="independentNote">
+<div class="health" id="independentNote" hidden>
   <b>Independent tool</b>
   <span>Box Ctrl has no connection to Festool, Milwaukee, DEWALT, Bosch, Makita, Liene or any other maker, and none of them has given permission or endorsed it. Their names are here only to make it easier to label boxes you own. We don't condone using it to misuse a brand or pass anything off as a maker's own.</span>
 </div>
+<label class="noticeack" id="noticeAck" hidden><input type="checkbox" id="noticesRead"><span>I've read these. Hide them on this device.</span></label>
 
 <section class="tier" aria-labelledby="a1">
   <div class="tier-h"><span class="n">1</span><h2 id="a1">Template Design</h2><span class="tier-d">What every label shares: the box, your mark and your owner line</span><span class="tier-s idle" id="a1State"></span></div>
@@ -105,7 +106,7 @@
     </div>
     <p class="small note" id="catalogHint" hidden>Standard tools from Festool, Milwaukee, DEWALT, Bosch and Makita are already loaded. Press Add standard tools to pick yours.</p>
     <div id="panel" hidden></div>
-    <div class="split r">
+    <div class="split r listrows">
       <div style="min-width:0">
         <div id="boxes"></div>
         <p class="small mono" id="fill" style="margin:8px 8px 0"></p>
@@ -165,6 +166,8 @@
     </div>
   </div>
 </section>
+
+<div class="noticeshow"><button class="key" type="button" id="showNotices" hidden>Show notices</button></div>
 
 <!--FOOTER-->
 </div>
