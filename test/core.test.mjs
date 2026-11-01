@@ -82,7 +82,7 @@ test('BX-A15 Drew\'s list imports whole', { skip: !existsSync(CSV) && 'private f
   const read = c.readTable(c.parseCsv(readFileSync(CSV, 'utf8')));
   assert.equal(read.skipped.length, 0, read.skipped.join('; '));
   assert.equal(read.rows.length, 66); assert.equal(read.iconNotes.length, 0, read.iconNotes.join('; '));
-  assert.deepEqual(read.unused, ['tier', 'model', 'systainer', 'location', 'label_status', 'notes']);
+  assert.deepEqual(read.kept, ['tier', 'model', 'systainer', 'location', 'label_status', 'notes']);
   const plan = c.planImport(S(), read);
   assert.equal(plan.boxes[0].id, 'ST-001'); assert.equal(plan.boxes[0].c2, 'Splinter guard');
   assert.ok(!plan.added.includes('festool')); assert.equal(plan.boxes[0].groupId, 'festool');
@@ -208,6 +208,48 @@ test('a renamed maker group still matches', () => {
   assert.equal(c.groupForEntry(g, { brand: 'Festool', tier: 'power' }), 'g1');
 });
 test('makers are spelled their own way', () => assert.deepEqual(c.startGroups().slice(0, 5).map((g) => g.name), ['Festool', 'Milwaukee', 'DEWALT', 'Bosch', 'Makita']));
+const round = (s) => {
+  const read = c.readTable(c.parseCsv(c.writeCsv(s)));
+  return { read, plan: c.planImport({ ...s, boxes: [] }, read) };
+};
+test('BX-A78 Drew\'s list survives export and import', { skip: !existsSync(CSV) && 'private file not here' }, () => {
+  const read = c.readTable(c.parseCsv(readFileSync(CSV, 'utf8'))), plan = c.planImport(S(), read);
+  const s = { ...S(), groups: plan.groups, boxes: plan.boxes, extraCols: read.kept };
+  const back = round(s);
+  assert.equal(back.read.skipped.length, 0); assert.deepEqual(back.read.kept, read.kept); assert.equal(back.plan.boxes.length, 66);
+  const pick = (b) => ({ id: b.id, name: b.name, kind: b.kind, c1: b.c1, c2: b.c2, icon: b.icon, qty: b.qty, extra: b.extra });
+  assert.deepEqual(back.plan.boxes.map(pick), plan.boxes.map(pick));
+  assert.equal(c.writeCsv({ ...s, groups: back.plan.groups, boxes: back.plan.boxes }), c.writeCsv(s));
+});
+test('BX-A79 awkward text round trips', () => {
+  const b = box({ name: 'ZYKLOP 1/2" MM', c1: 'Saw, blade · guard', c2: 'Bits → case', extra: { Location: 'Shelf 2, "top"', Notes: 'line one\nline two' } });
+  const s = { ...S(), boxes: [b], extraCols: ['Location', 'Notes'] }, r = round(s).plan.boxes[0];
+  assert.deepEqual([r.name, r.c1, r.c2, r.extra], [b.name, b.c1, b.c2, b.extra]);
+});
+test('the spreadsheet starts with a byte order mark', () => assert.equal(c.writeCsv(S()).charCodeAt(0), 0xfeff));
+test('kept columns stay out of the label', () => {
+  const r = c.readTable([['Name', 'Location'], ['SAW', 'Van']]);
+  assert.deepEqual(r.kept, ['Location']); assert.deepEqual(r.rows[0].extra, { Location: 'Van' });
+});
+test('kept columns survive a saved list', () => {
+  const s = { ...S({ boxes: [box({ extra: { Location: 'Van' } })] }), extraCols: ['Location'], custom: { W: 120, H: 25 }, mark: { kind: 'none' }, owner: '', inputs: inputs(), route: 'liene', paper: 'letter', profile: 'sys-standard' };
+  const r = c.readList(JSON.parse(JSON.stringify(c.writeList(s))));
+  assert.deepEqual([r.extraCols, r.boxes[0].extra], [['Location'], { Location: 'Van' }]);
+});
+test('column lists merge without repeats', () => assert.deepEqual(c.mergeCols(['Location'], ['location', 'Notes']), ['Location', 'Notes']));
+const page = (f) => readFileSync(new URL(`../site/${f}`, import.meta.url), 'utf8');
+test('BX-A81 the printer notice opens both pages', () => {
+  for (const f of ['index.html', 'guide.html']) {
+    const p = page(f), after = p.slice(p.indexOf('</header>') + 9).trimStart();
+    assert.ok(after.startsWith('<div class="health warn" id="printerNote">'), f);
+    const note = after.slice(0, after.indexOf('</div>'));
+    assert.match(note, /Printer required/); assert.match(note, /liene-life\.com\/products\/pixcut-s1/); assert.doesNotMatch(note, /<button/);
+  }
+});
+test('BX-A82 what you need covers both routes', () => {
+  const need = page('guide.html').match(/<section id="need">.*?<\/section>/s)[0];
+  for (const t of ['Liene PixCut S1', 'office printer', 'Save as PDF', "haven't been tested"]) assert.ok(need.includes(t), t);
+});
 test('symbol shortcuts', () => assert.equal(c.fixSymbols('A * B -> C <-> D'), 'A · B → C ↔ D'));
 
 test('custom sizes turn on the sheet', () => {

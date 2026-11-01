@@ -20,7 +20,7 @@
   <div class="brand">
     <h1>Box Ctrl</h1>
     <span class="by">Labels for tool boxes, sized to the box you own</span>
-    <span class="by mono">· x0.0.4</span>
+    <span class="by mono">· x0.0.5</span>
     <span class="tag" id="tourTag" hidden>Tutorial · sample list</span>
   </div>
   <div class="leds" aria-live="polite">
@@ -32,6 +32,12 @@
     <!--THEME-->
   </div>
 </header>
+
+<div class="health warn" id="printerNote">
+  <b>Printer required</b>
+  <span>Box Ctrl prints sheets for a Liene PixCut S1, the only sticker printer it has been tested on, or pages for an office printer that you trim by hand.</span>
+  <a class="key" href="https://www.liene-life.com/products/pixcut-s1-photo-sticker-printer-and-cutter">View the printer</a>
+</div>
 
 <section class="tier" aria-labelledby="a1">
   <div class="tier-h"><span class="n">1</span><h2 id="a1">Template Design</h2><span class="tier-d">What every label shares: the box, your mark and your owner line</span><span class="tier-s idle" id="a1State"></span></div>
@@ -88,7 +94,8 @@
       <span class="sp"></span>
       <button class="key" type="button" id="openFile"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.500 19V6a1.500 1.500 0 0 1 1.500-1.500h4.500l2 2.500H19a1.500 1.500 0 0 1 1.500 1.500V19a1.500 1.500 0 0 1-1.500 1.500H5A1.500 1.500 0 0 1 3.500 19Z"/></svg>Open file</button>
       <a class="key" href="box-ctrl-template.xlsx" download><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.500" y="4.500" width="17" height="15" rx="1.500"/><path d="M3.500 9.500h17M3.500 14.500h17M10 4.500v15"/></svg>Get template</a>
-      <button class="key" type="button" id="exportList"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V4M7.500 8.500 12 4l4.500 4.500M4.500 15v3.500a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V15"/></svg>Export list</button>
+      <button class="key" type="button" id="exportCsv"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V4M7.500 8.500 12 4l4.500 4.500M4.500 15v3.500a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V15"/></svg>Export spreadsheet</button>
+      <button class="key" type="button" id="exportList">Export backup</button>
       <span class="tag" id="examples" hidden>Examples</span>
     </div>
     <p class="small note" id="catalogHint" hidden>Standard tools from Festool, Milwaukee, DEWALT, Bosch and Makita are already loaded. Press Add standard tools to pick yours.</p>

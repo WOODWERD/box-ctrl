@@ -11,7 +11,7 @@ Pick your box, add your logo, list what's in each box, and print.
 - **A free icon library.** 52 tool icons, drawn or MIT licensed.
 - **Standard tools from manufacturers.** Already loaded: pick from Festool, Milwaukee, DEWALT, Bosch and Makita lists, and it fills in the label or adds the box.
 - **Groups.** Colour the bands by kind of box. Change a group and its labels follow.
-- **Excel and CSV import.** Fill in the template, then see what will be added before anything changes.
+- **Works with your spreadsheet.** Open Excel or CSV files, see what will be added before anything changes, and export back out. Your own columns stay with each box.
 - **Two ways to print.** Sheets for the Liene PixCut S1 with the exact settings, or pages with crop marks for an office printer.
 - **A tutorial.** Builds a sample set of labels with you, and leaves your list alone.
 - **Private.** No network requests, no analytics, no account. Your list and logo stay on your device.

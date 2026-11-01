@@ -13,7 +13,7 @@ const SEARCH_ICON = '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><cir
 const iconSvg = (key) => { const i = ICONS[key]; return i ? `<svg class="lic" viewBox="0 0 24 24" aria-hidden="true"><path d="${i.d}"${i.rot ? ` transform="rotate(${i.rot} 12 12)"` : ''}/></svg>` : '<svg class="lic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5l14 14"/></svg>'; };
 
 const start = () => ({
-  profile: c.PROFILES[0].id, custom: { W: 120, H: 25 }, owner: '', prefix: 'BOX-', startNo: 1, groups: c.startGroups(), boxes: c.exampleBoxes(), inputs: { ...c.DEFAULTS }, route: 'liene', paper: 'letter', sel: 0,
+  profile: c.PROFILES[0].id, custom: { W: 120, H: 25 }, owner: '', prefix: 'BOX-', startNo: 1, extraCols: [], groups: c.startGroups(), boxes: c.exampleBoxes(), inputs: { ...c.DEFAULTS }, route: 'liene', paper: 'letter', sel: 0,
   markTab: 'up', logo: null, textMark: { text: '', frame: 'none' }, iconMark: '',
 });
 const S = { ...start(), examples: true, panel: null, plan: null, fileNote: '', logoNote: '', pending: null, pendingList: null, stored: true, saving: false, tour: null, tourSeen: false, catBrand: 'All' };
@@ -378,7 +378,7 @@ function listPanel(p) {
   const tools = el('div', 'tools');
   tools.append(button('key go', 'Replace list', () => {
     const logo = c.newLogo(mark(), r.mark) ? r.mark : null, m = logo ? { kind: 'none' } : r.mark;
-    Object.assign(S, { profile: r.profile, custom: r.custom, owner: r.owner, prefix: r.prefix, startNo: r.startNo, groups: r.groups, inputs: r.inputs, route: r.route, paper: r.paper, boxes: r.boxes.length ? r.boxes : [c.blankBox(c.nextId([], r.prefix))], sel: 0, examples: false, panel: null, plan: null });
+    Object.assign(S, { profile: r.profile, custom: r.custom, owner: r.owner, prefix: r.prefix, startNo: r.startNo, extraCols: r.extraCols, groups: r.groups, inputs: r.inputs, route: r.route, paper: r.paper, boxes: r.boxes.length ? r.boxes : [c.blankBox(c.nextId([], r.prefix))], sel: 0, examples: false, panel: null, plan: null });
     if (!logo) applyMark(m); else { S.markTab = 'up'; S.logo = null; S.pending = { ...logo, white: false }; }
     syncInputs(); renderPanel(); buildList(); changed();
   }), button('key', 'Cancel', closePanel));
@@ -390,16 +390,16 @@ function sheetPanel(p) {
   p.setAttribute('aria-label', 'Spreadsheet import');
   if (r.added.length) parts.push(`${r.added.length} new group${r.added.length === 1 ? '' : 's'}`);
   if (r.skipped.length) parts.push(`${r.skipped.length} row${r.skipped.length === 1 ? '' : 's'} skipped`);
-  if (r.unused.length) parts.push(`${r.unused.length} column${r.unused.length === 1 ? '' : 's'} not used`);
+  if (r.kept.length) parts.push(`${r.kept.length} column${r.kept.length === 1 ? '' : 's'} kept`);
   const detail = [`From ${r.file}.`];
   if (r.added.length) detail.push(`New groups: ${r.added.join(', ')}.`);
-  if (r.unused.length) detail.push(`Columns not used: ${r.unused.join(', ')}.`);
+  if (r.kept.length) detail.push(`Kept with each box, never printed: ${r.kept.join(', ')}.`);
   p.append(el('h3', '', parts.join(', ')), el('p', 'small', detail.join(' ')));
   r.skipped.slice(0, 8).forEach((s) => { const [a, b] = s.split(': '); p.append(strip('warn', a, `${b} It wasn't added.`)); });
   if (r.skipped.length > 8) p.append(el('p', 'small', `And ${r.skipped.length - 8} more rows.`));
   r.iconNotes.slice(0, 4).forEach((s) => { const [a, b] = s.split(': '); p.append(strip('warn', a, b)); });
-  const apply = (boxes) => { Object.assign(S, { boxes, groups: r.groups, sel: 0, examples: false, panel: null, plan: null }); renderPanel(); buildList(); changed(); };
-  const tools = el('div', 'tools'), add = button('key go', 'Add to list', () => apply(S.examples ? r.boxes : S.boxes.concat(r.boxes))), rep = button('key', 'Replace list', () => apply(r.boxes));
+  const apply = (boxes, cols) => { Object.assign(S, { boxes, extraCols: cols, groups: r.groups, sel: 0, examples: false, panel: null, plan: null }); renderPanel(); buildList(); changed(); };
+  const tools = el('div', 'tools'), add = button('key go', 'Add to list', () => (S.examples ? apply(r.boxes, r.kept) : apply(S.boxes.concat(r.boxes), c.mergeCols(S.extraCols, r.kept)))), rep = button('key', 'Replace list', () => apply(r.boxes, r.kept));
   add.disabled = !n || base + n > c.MAX_BOXES; rep.disabled = !n || n > c.MAX_BOXES;
   tools.append(add, rep, button('key', 'Cancel', closePanel));
   if (base + n > c.MAX_BOXES) p.append(strip('bad', 'Too many boxes', `The list holds up to ${c.MAX_BOXES}. This would make ${base + n}.`));
@@ -530,7 +530,7 @@ const TOUR = [
   { area: 'a3Strips', target: 'routeSeg', title: 'Print', words: 'Liene PixCut gives you sheets of three, with the exact settings to type into the Liene app. Office printer gives you pages with crop marks, to print on card stock and trim. Try both.' },
 ];
 function startTour() {
-  const keep = ['profile', 'custom', 'owner', 'prefix', 'startNo', 'groups', 'boxes', 'inputs', 'route', 'paper', 'sel', 'markTab', 'logo', 'textMark', 'iconMark', 'examples'];
+  const keep = ['profile', 'custom', 'owner', 'prefix', 'startNo', 'extraCols', 'groups', 'boxes', 'inputs', 'route', 'paper', 'sel', 'markTab', 'logo', 'textMark', 'iconMark', 'examples'];
   const saved = JSON.parse(JSON.stringify(Object.fromEntries(keep.map((k) => [k, S[k]]))));
   const sample = c.sampleState();
   Object.assign(S, sample, { markTab: 'up', logo: sample.mark, textMark: { text: '', frame: 'none' }, iconMark: '', examples: false, panel: null, plan: null, pending: null, logoNote: '', fileNote: '' });
@@ -638,11 +638,11 @@ function refresh(keepNote) {
   }
 
   // Area 2
-  if (!S.stored && !S.tour) a2.append(strip('warn', 'Not saving', "This browser isn't keeping your list. Export it before you close.", { label: 'Export list', run: exportList }));
+  if (!S.stored && !S.tour) a2.append(strip('warn', 'Not saving', "This browser isn't keeping your list. Export it before you close.", { label: 'Export backup', run: exportList }));
   if (S.fileNote) a2.append(strip('bad', 'File', S.fileNote));
   $('examples').hidden = !S.examples;
   $('catalogHint').hidden = !S.examples || S.panel === 'tools';
-  $('exportList').disabled = $('openFile').disabled = !!S.tour;
+  $('exportList').disabled = $('exportCsv').disabled = $('openFile').disabled = !!S.tour;
   $('addCatalog').classList.toggle('hl', !!S.tour && !S.tour.done && TOUR[S.tour.step].target === 'addCatalog');
   state('a2State', !S.stored ? 'Not saving' : notes.flagged ? `${notes.flagged} box${notes.flagged === 1 ? '' : 'es'} to check` : total ? `${S.boxes.length} box${S.boxes.length === 1 ? '' : 'es'}` : '0 labels', !S.stored || notes.flagged ? 'warn' : total ? 'ok' : 'idle');
   $('fill').textContent = total ? `${total} label${total === 1 ? '' : 's'} on ${sheets} ${unit}${sheets === 1 ? '' : 's'} · ${sheets * cap.n - total ? `${sheets * cap.n - total} open spot${sheets * cap.n - total === 1 ? '' : 's'} on ${unit} ${sheets}` : `last ${unit} is full`}` : 'No labels yet';
@@ -687,6 +687,8 @@ function numberAll() {
   S.boxes.forEach((b, i) => { b.id = next[i].id; });
   buildList(); changed(); S.undoIds = ids; refresh();
 }
+
+function exportCsv() { download(new Blob([c.writeCsv(S)], { type: 'text/csv;charset=utf-8' }), c.csvName()); }
 
 function exportList() { download(new Blob([JSON.stringify(c.writeList(listOf()), null, 2)], { type: 'application/json' }), c.listName()); }
 
@@ -742,6 +744,7 @@ $('openGroups').onclick = () => (S.panel === 'groups' ? closePanel() : openPanel
 $('openFile').onclick = () => $('file').click();
 $('file').onchange = (e) => { openFile(e.target.files[0]); e.target.value = ''; };
 $('exportList').onclick = exportList;
+$('exportCsv').onclick = exportCsv;
 $('save').onclick = () => (S.route === 'office' ? printOffice() : saveSheets());
 $('tourBtn').onclick = startTour;
 

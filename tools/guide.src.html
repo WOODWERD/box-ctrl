@@ -19,7 +19,7 @@
   <div class="brand">
     <h1>Box Ctrl</h1>
     <span class="by">User guide</span>
-    <span class="by mono">· x0.0.4</span>
+    <span class="by mono">· x0.0.5</span>
   </div>
   <div class="leds">
     <a href="index.html" class="guidelink">Back to Box Ctrl</a>
@@ -27,9 +27,16 @@
   </div>
 </header>
 
+<div class="health warn" id="printerNote">
+  <b>Printer required</b>
+  <span>Box Ctrl prints sheets for a Liene PixCut S1, the only sticker printer it has been tested on, or pages for an office printer that you trim by hand.</span>
+  <a class="key" href="https://www.liene-life.com/products/pixcut-s1-photo-sticker-printer-and-cutter">View the printer</a>
+</div>
+
 <div class="guide">
   <nav aria-label="Guide sections">
     <a href="#what">What it is</a>
+    <a href="#need">What you need</a>
     <a href="#steps">The three steps</a>
     <a href="#measure">Measuring your box</a>
     <a href="#other">Other boxes</a>
@@ -37,12 +44,14 @@
     <a href="#office">Printing on an office printer</a>
     <a href="#logos">Logos and names</a>
     <a href="#tools">Standard tools</a>
+    <a href="#keep">Keeping your list</a>
     <a href="#sets">Printing a second set</a>
     <a href="#errors">Errors and fixes</a>
     <a href="#privacy">Privacy</a>
   </nav>
   <div>
     <section id="what"><h2>What it is</h2><p>Box Ctrl makes labels for tool boxes. Pick your box, add your logo, list what's in each box, and print. It doesn't print anything by itself: it gives you sheets for the Liene app or your browser's print dialog.</p><p>New here? <a href="index.html#tutorial">Take the tutorial</a>. It builds a sample set of labels with you and won't touch your list.</p></section>
+    <section id="need"><h2>What you need</h2><p>Box Ctrl doesn't print on its own. It makes files and pages for one of two routes.</p><p><b>Sticker labels</b></p><ul style="margin:0;padding-left:21px;display:flex;flex-direction:column;gap:5px"><li>A <a href="https://www.liene-life.com/products/pixcut-s1-photo-sticker-printer-and-cutter">Liene PixCut S1</a> photo sticker printer and cutter.</li><li>The <a href="https://www.liene-life.com/pages/liene-photo-app-for-pixcut">Liene Photo</a> app for Mac.</li><li>Liene 4 × 7 sticker paper.</li></ul><p class="small">The sheets are made for this printer, app and paper, and it's the only sticker printer tested. Other sticker printers haven't been tested, and a sheet made here may not print or cut correctly on them.</p><p><b>Paper cards</b></p><ul style="margin:0;padding-left:21px;display:flex;flex-direction:column;gap:5px"><li>An office printer that takes Letter or A4 card stock.</li><li>Card stock, 135 gsm or heavier for Systainer cards.</li><li>A trimmer or a sharp knife and rule.</li></ul><p class="small">These pages go through your browser's print dialog, so there's no separate PDF export. To keep a PDF, choose Save as PDF there, and print it at 100 %.</p></section>
     <section id="steps"><h2>The three steps</h2><ol><li>Template Design: set what every label shares. Pick the box size, upload your logo, and add an owner line and ID prefix.</li><li>Label Information: list your boxes, by hand, with Add standard tools, or from a spreadsheet.</li><li>Label Print: choose a route and print.</li></ol></section>
     <section id="measure"><h2>Measuring your box</h2><p>Measure the space the label sits in, in millimetres, and take off a little so it clears any tabs or edges. Enter it under Custom size. Print one label and check it before a full run.</p></section>
     <section id="other"><h2>Other boxes</h2><p>Two sizes are built in: the Systainer standard card and the Systainer³ S card. A sticker for the standard card is cut to 84 × 54 mm, so it clears the small tabs on the back of the cover. A paper card stays at the full 85.72 × 54.03 mm.</p><p>We haven't found a published label size for Milwaukee Packout, DEWALT TSTAK or ToughSystem, L-BOXX, MakPac or metaBOX, so measure yours and use Custom size. Long, thin labels get the Strip shape, which leaves off the contents.</p></section>
@@ -50,8 +59,9 @@
     <section id="office"><h2>Printing on an office printer</h2><ol><li>Choose Office printer in Label Print, and pick Letter or A4.</li><li>Press Print. Your browser's print dialog opens.</li><li>Set Scale to 100 %, and use card stock. For Systainer cards, 135 gsm or heavier.</li><li>Check that the line on the page measures 50 mm.</li><li>Trim on the crop marks.</li></ol></section>
     <section id="logos"><h2>Logos and names</h2><p>Only add a logo you own or have permission to use. Box Ctrl asks you to confirm that each time you add one. You're responsible for how you use it, and for the names you print. Box Ctrl doesn't check logos, doesn't keep a copy, and takes no responsibility for your use of one.</p><p>Standard tools list product names so you can find your tool. Those names belong to their makers. Check each one against your tool.</p></section>
     <section id="tools"><h2>Standard tools from manufacturers</h2><p>Tools from Festool, Milwaukee, DEWALT, Bosch and Makita are already loaded, so you don't have to type them. Press Add standard tools, pick a maker, and pick your tools. Each one adds a box in that maker's group, ready to edit. The magnifier on a row fills in that one box.</p></section>
+    <section id="keep"><h2>Keeping your list</h2><p>There are no accounts. Your list saves in this browser, on this computer, and clearing browser data removes it. So keep a copy.</p><p><b>Export spreadsheet</b> saves a .csv you can open in Excel, Numbers or Google Sheets. Add your own columns, such as Location or Purchase date. Box Ctrl keeps them with each box, never prints them, and puts them back when you export. To bring it back, press Open file.</p><p><b>Export backup</b> saves everything, including your logo and group colours, as a .json file.</p></section>
     <section id="sets"><h2>Printing a second set</h2><p>Already printed some? Set Start numbering at to the next number in Template Design, then add your new boxes. If they're on the same list, set Quantity to 0 on the boxes you've already printed.</p></section>
-    <section id="errors"><h2>Errors and fixes</h2><p>The name is small: shorten it.</p><p>Left off at this size: the label is too small for everything. Shorten the text, or pick a bigger size.</p><p>That file has no Name column: start from the template.</p><p>An older or protected Excel file: save it as .xlsx or .csv.</p><p>This browser isn't keeping your list: use Export list before you close.</p></section>
+    <section id="errors"><h2>Errors and fixes</h2><p>The name is small: shorten it.</p><p>Left off at this size: the label is too small for everything. Shorten the text, or pick a bigger size.</p><p>That file has no Name column: start from the template.</p><p>An older or protected Excel file: save it as .xlsx or .csv.</p><p>This browser isn't keeping your list: use Export backup before you close.</p></section>
     <section id="privacy"><h2>Privacy</h2><p>Box Ctrl makes no network requests and has no analytics. Your list, spreadsheets and logo stay on this device.</p></section>
   </div>
 </div>

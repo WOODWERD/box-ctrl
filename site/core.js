@@ -108,7 +108,7 @@ export const exampleBoxes = () => [
 // The tutorial's sample list (BX-R122)
 export const SAMPLE_LOGO = { kind: 'img', src: 'woodwerd-sample-logo.png', file: 'woodwerd-sample-logo.png', w: 640, h: 296, sample: true };
 export const sampleState = () => ({
-  profile: 'sys-standard', custom: { W: 120, H: 25 }, mark: { ...SAMPLE_LOGO }, owner: 'Property of WOODWERD', prefix: 'BOX-', startNo: 1,
+  profile: 'sys-standard', custom: { W: 120, H: 25 }, mark: { ...SAMPLE_LOGO }, owner: 'Property of WOODWERD', prefix: 'BOX-', startNo: 1, extraCols: [],
   groups: startGroups(), boxes: exampleBoxes().filter((b) => ['BOX-001', 'BOX-002', 'BOX-005'].includes(b.id)), inputs: { ...DEFAULTS }, route: 'liene', paper: 'letter', sel: 0,
 });
 
@@ -249,8 +249,9 @@ export function readTable(table) {
   const head = (table[0] || []).map((h) => String(h).trim().toLowerCase()), col = (n) => head.indexOf(n);
   const cn = col('name'), ck = col('kind'), cid = col('id'), cc = col('contents'), c1 = col('contents 1'), c2 = col('contents 2'), ci = col('icon'), cq = col('quantity');
   const cg = col('group') >= 0 ? col('group') : col('palette');
-  if (cn < 0) return { error: BAD_COLUMNS, rows: [], skipped: [], unused: [], iconNotes: [] };
-  const rows = [], skipped = [], iconNotes = [], unused = head.filter((h) => h && !KNOWN.includes(h));
+  if (cn < 0) return { error: BAD_COLUMNS, rows: [], skipped: [], kept: [], iconNotes: [] };
+  const raw = (table[0] || []).map((h) => String(h).trim()), keptAt = head.map((h, i) => (h && !KNOWN.includes(h) && head.indexOf(h) === i ? i : -1)).filter((i) => i >= 0);
+  const rows = [], skipped = [], iconNotes = [], kept = keptAt.map((i) => raw[i]);
   table.slice(1).forEach((r, i) => {
     const n = i + 2, get = (k) => (k < 0 ? '' : String(r[k] ?? '').trim());
     if (!r.some((v) => String(v ?? '').trim())) return;
@@ -268,9 +269,11 @@ export function readTable(table) {
     if (!Number.isInteger(qty) || qty < 0 || qty > 99) return skipped.push(`Row ${n}: Quantity must be a whole number from 0 to 99.`);
     let icon = get(ci).toLowerCase();
     if (icon && !ICONS[icon]) { iconNotes.push(`Row ${n}: no icon called ${icon}, so it has none.`); icon = ''; }
-    rows.push({ id, name, kind, c1: lines[0] || '', c2: lines[1] || '', group, icon, qty });
+    const extra = {};
+    keptAt.forEach((k) => { const v = String(r[k] ?? ''); if (v !== '') extra[raw[k]] = v; });
+    rows.push({ id, name, kind, c1: lines[0] || '', c2: lines[1] || '', group, icon, qty, extra });
   });
-  return { rows, skipped, unused, iconNotes };
+  return { rows, skipped, kept, iconNotes };
 }
 
 // Works out the boxes and any new groups. Nothing changes until the result is applied.
@@ -279,12 +282,23 @@ export function planImport(state, read, base = state.boxes) {
   const boxes = read.rows.map((r) => {
     let g = r.group ? groups.find((x) => x.name.toLowerCase() === r.group.toLowerCase()) : groups.find((x) => x.id === OTHER);
     if (!g) { g = { id: slug(), name: r.group, color: nextColour(groups) }; groups.push(g); added.push(g.name); }
-    const b = { id: r.id || nextId(made, state.prefix, state.startNo || 1), name: r.name, kind: r.kind, c1: r.c1, c2: r.c2, groupId: g.id, icon: r.icon, qty: r.qty };
+    const b = { id: r.id || nextId(made, state.prefix, state.startNo || 1), name: r.name, kind: r.kind, c1: r.c1, c2: r.c2, groupId: g.id, icon: r.icon, qty: r.qty, extra: r.extra };
     made.push(b);
     return b;
   });
-  return { boxes, groups, added, skipped: read.skipped, unused: read.unused, iconNotes: read.iconNotes };
+  return { boxes, groups, added, skipped: read.skipped, kept: read.kept, iconNotes: read.iconNotes };
 }
+
+// The everyday list: opens in any spreadsheet and opens back in here (BX-R134).
+// The byte order mark tells Excel it's UTF-8, so · and → survive.
+const cell = (v) => { const t = String(v ?? ''); return /[",\r\n]/.test(t) ? `"${t.replace(/"/g, '""')}"` : t; };
+export function writeCsv(s) {
+  const cols = s.extraCols || [], name = (id) => (s.groups.find((g) => g.id === id) || {}).name || '';
+  const rows = [['ID', 'Name', 'Kind', 'Contents', 'Group', 'Icon', 'Quantity', ...cols]];
+  s.boxes.forEach((b) => rows.push([b.id, b.name, b.kind, [b.c1, b.c2].filter(Boolean).join('|'), name(b.groupId), b.icon, b.qty, ...cols.map((h) => (b.extra || {})[h] ?? '')]));
+  return '\uFEFF' + rows.map((r) => r.map(cell).join(',')).join('\r\n') + '\r\n';
+}
+export const mergeCols = (a, b) => [...a, ...b.filter((h) => !a.some((x) => x.toLowerCase() === h.toLowerCase()))];
 
 // ---------- .xlsx, read locally with no library ----------
 const decode = (s) => s.replace(/&#(\d+);/g, (_, n) => String.fromCodePoint(+n)).replace(/&#x([0-9a-f]+);/gi, (_, n) => String.fromCodePoint(parseInt(n, 16)))
@@ -346,6 +360,8 @@ const readMark = (m) => {
 };
 const num = (v, r, d) => { const f = parseFloat(v); return isFinite(f) && f >= r.min && f <= r.max ? f : d; };
 
+const readExtra = (e) => Object.fromEntries(Object.entries(e && typeof e === 'object' ? e : {}).slice(0, 200).map(([k, v]) => [text(k, 200), text(v, 5000)]));
+
 export function readList(o) {
   if (!o || typeof o !== 'object' || !Array.isArray(o.boxes)) throw new Error('not a list');
   const groups = (Array.isArray(o.groups) ? o.groups : []).map((g) => {
@@ -358,16 +374,17 @@ export function readList(o) {
   return {
     profile: PROFILES.some((p) => p.id === o.profile) || o.profile === 'custom' ? o.profile : PROFILES[0].id,
     custom: { W: num(o.custom?.W, CUSTOM.W, 120), H: num(o.custom?.H, CUSTOM.H, 25) },
+    extraCols: Array.isArray(o.extraCols) ? o.extraCols.map((h) => text(h, 200)).filter(Boolean).slice(0, 200) : [],
     mark: readMark(o.mark), owner: text(o.owner, LIMITS.owner), prefix: text(o.prefix, LIMITS.prefix) || 'BOX-', startNo: clampStart(o.startNo) || 1, groups,
     inputs: { B: num(i.B, INPUTS.B, DEFAULTS.B), G: num(i.G, INPUTS.G, DEFAULTS.G) },
     route: o.route === 'office' ? 'office' : 'liene', paper: o.paper === 'a4' ? 'a4' : 'letter',
     boxes: o.boxes.map((b) => ({
       id: text(b.id, LIMITS.id), name: text(b.name, LIMITS.name), kind: text(b.kind, LIMITS.kind), c1: text(b.c1, LIMITS.c), c2: text(b.c2, LIMITS.c),
-      groupId: ids.has(b.groupId) ? b.groupId : OTHER, icon: ICONS[b.icon] ? b.icon : '', qty: clampQty(b.qty),
+      groupId: ids.has(b.groupId) ? b.groupId : OTHER, icon: ICONS[b.icon] ? b.icon : '', qty: clampQty(b.qty), extra: readExtra(b.extra),
     })),
   };
 }
-export const writeList = (s) => ({ version: 1, profile: s.profile, custom: s.custom, mark: s.mark, owner: s.owner, prefix: s.prefix, startNo: s.startNo || 1, groups: s.groups, inputs: s.inputs, route: s.route, paper: s.paper, boxes: s.boxes });
+export const writeList = (s) => ({ version: 1, extraCols: s.extraCols || [], profile: s.profile, custom: s.custom, mark: s.mark, owner: s.owner, prefix: s.prefix, startNo: s.startNo || 1, groups: s.groups, inputs: s.inputs, route: s.route, paper: s.paper, boxes: s.boxes });
 
 // A list file needs the acknowledgement only when it brings a logo not already here (BX-R110)
 export const newLogo = (current, incoming) => incoming.kind === 'img' && !(current.kind === 'img' && current.src === incoming.src);
@@ -379,6 +396,7 @@ export function localDate(d = new Date()) {
 export const sheetName = (i, n, d) => `box-labels-90x170-${localDate(d)}-sheet-${i + 1}-of-${n}.png`;
 export const zipName = (d) => `box-labels-90x170-${localDate(d)}.zip`;
 export const listName = (d) => `box-list-${localDate(d)}.json`;
+export const csvName = (d) => `box-list-${localDate(d)}.csv`;
 
 const CRC = Array.from({ length: 256 }, (_, n) => { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1; return c >>> 0; });
 const crc32 = (u8) => { let c = 0xffffffff; for (const b of u8) c = CRC[(c ^ b) & 255] ^ (c >>> 8); return (c ^ 0xffffffff) >>> 0; };

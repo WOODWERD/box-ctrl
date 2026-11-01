@@ -43,7 +43,7 @@
     <a href="https://woodwerd.com" aria-label="WOODWERD Design"><!--MARK--></a>
     <span class="tagline">Think · Design · Style</span>
   </div>
-  <p><b>Box Ctrl x0.0.4</b> · <a href="guide.html">User guide</a> · <a href="https://github.com/WOODWERD/box-ctrl">Source and issues on GitHub</a> · MIT licence · by WOODWERD LLC</p>
+  <p><b>Box Ctrl x0.0.5</b> · <a href="guide.html">User guide</a> · <a href="https://github.com/WOODWERD/box-ctrl">Source and issues on GitHub</a> · MIT licence · by WOODWERD LLC</p>
   <p>Runs entirely in your browser. It makes no network requests, and your list and logo never leave this computer.</p>
   <p>An independent project, not affiliated with or endorsed by any toolmaker or printer maker. Festool, Systainer, Milwaukee, DEWALT, Bosch, Makita, Liene and PixCut are trademarks of their owners. Product names in the standard tools list belong to their owners and identify the tools only.</p>
 </footer>
