@@ -1,7 +1,7 @@
 // Box Ctrl page. Rules live in core.js; this file draws them and handles input.
 import * as c from './core.js';
 import { ICONS, ICON_GROUPS, searchIcons } from './icons.js';
-import { searchCatalog, CATALOG_DATE } from './catalog.js';
+import { searchCatalog, CATALOG_DATE, BRANDS } from './catalog.js';
 
 const $ = (id) => document.getElementById(id);
 const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
@@ -13,10 +13,10 @@ const SEARCH_ICON = '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><cir
 const iconSvg = (key) => { const i = ICONS[key]; return i ? `<svg class="lic" viewBox="0 0 24 24" aria-hidden="true"><path d="${i.d}"${i.rot ? ` transform="rotate(${i.rot} 12 12)"` : ''}/></svg>` : '<svg class="lic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5l14 14"/></svg>'; };
 
 const start = () => ({
-  profile: c.PROFILES[0].id, custom: { W: 120, H: 25 }, owner: '', prefix: 'BOX-', groups: c.startGroups(), boxes: c.exampleBoxes(), inputs: { ...c.DEFAULTS }, route: 'liene', paper: 'letter', sel: 0,
+  profile: c.PROFILES[0].id, custom: { W: 120, H: 25 }, owner: '', prefix: 'BOX-', startNo: 1, groups: c.startGroups(), boxes: c.exampleBoxes(), inputs: { ...c.DEFAULTS }, route: 'liene', paper: 'letter', sel: 0,
   markTab: 'up', logo: null, textMark: { text: '', frame: 'none' }, iconMark: '',
 });
-const S = { ...start(), examples: true, panel: null, plan: null, fileNote: '', logoNote: '', pending: null, pendingList: null, stored: true, saving: false, tour: null, tourSeen: false };
+const S = { ...start(), examples: true, panel: null, plan: null, fileNote: '', logoNote: '', pending: null, pendingList: null, stored: true, saving: false, tour: null, tourSeen: false, catBrand: 'All' };
 const bad = {};
 
 // The one mark in use, from the tab that's selected (BX-R40)
@@ -213,7 +213,7 @@ function buildList() {
   S.boxes.forEach((b, i) => {
     const n = i + 1, row = el('div', `rowwrap${i === S.sel ? ' sel' : ''}`), pick = el('button', 'pick'), rowc = el('div', 'rowc'), one = el('div', 'row1'), two = el('div', 'row2'), notes = el('div', 'strips');
     pick.type = 'button'; pick.innerHTML = POINTER; pick.setAttribute('aria-current', String(i === S.sel)); pick.setAttribute('aria-label', `Preview box ${n}`); pick.onclick = () => select(i);
-    const tool = button('key sq', '', () => { S.sel = i; openPanel('tools', { index: i }); }, SEARCH_ICON); tool.setAttribute('aria-label', `Choose a tool for box ${n}`); tool.title = 'Choose a tool';
+    const tool = button('key sq', '', () => { S.sel = i; openPanel('tools', { index: i }); }, SEARCH_ICON); tool.setAttribute('aria-label', `Choose a standard tool for box ${n}`); tool.title = 'Choose a standard tool';
     const ic = el('button', 'key sq'); ic.type = 'button'; ic.innerHTML = iconSvg(b.icon); ic.title = ICONS[b.icon]?.name || 'No icon'; ic.setAttribute('aria-label', `Icon for box ${n}: ${ic.title}`);
     ic.onclick = () => { S.sel = i; openPanel('icons', { target: 'box', index: i }); };
     const q = el('input', 'in m'); q.value = b.qty; q.type = 'number'; q.min = 0; q.max = 99; q.setAttribute('aria-label', `How many of box ${n}`);
@@ -332,32 +332,44 @@ function iconsPanel(p) {
 }
 
 function toolsPanel(p) {
-  const i = S.plan.index, box = S.boxes[i];
-  p.setAttribute('aria-label', 'Tool catalog');
-  p.append(el('h3', '', `Choose a tool for ${box.id || `box ${i + 1}`}`));
+  const adding = !!S.plan.add, i = S.plan.index, box = adding ? null : S.boxes[i];
+  p.setAttribute('aria-label', 'Standard tools from manufacturers');
+  p.append(el('h3', '', adding ? 'Standard tools from manufacturers' : `Choose a standard tool for ${box.id || `box ${i + 1}`}`), el('p', 'small', adding ? `Already loaded. Pick a maker, then pick your tools. Each one adds a box in that maker's group.` : `Already loaded. Pick a maker, then your tool.`));
+  const tabs = el('div', 'segc wrap'); tabs.setAttribute('role', 'group'); tabs.setAttribute('aria-label', 'Brand');
+  ['All', ...BRANDS].forEach((b) => {
+    const t = el('button', '', b); t.type = 'button'; t.setAttribute('aria-pressed', String(b === S.catBrand));
+    t.onclick = () => { S.catBrand = b; tabs.querySelectorAll('button').forEach((x) => x.setAttribute('aria-pressed', String(x === t))); draw(); };
+    tabs.append(t);
+  });
   const q = el('input', 'in'); q.placeholder = 'Search by brand, name or kind'; q.setAttribute('aria-label', 'Search tools');
   const out = el('div', 'tlist'), msg = el('div', 'strips');
-  const apply = (e) => {
-    const g = { power: 'power', hand: 'hand', consumable: 'consumable' }[e.tier];
-    Object.assign(box, { name: e.name, kind: e.kind, c1: e.c1, c2: e.c2, icon: e.icon });
-    if (S.groups.some((x) => x.id === g)) box.groupId = g;
-    S.panel = null; S.plan = null; renderPanel(); buildList(); changed();
+  const fill = (b, e) => {
+    Object.assign(b, { name: e.name, kind: e.kind, c1: e.c1, c2: e.c2, icon: e.icon, groupId: c.groupForEntry(S.groups, e) });
+  };
+  const apply = (e) => { fill(box, e); S.panel = null; S.plan = null; renderPanel(); buildList(); changed(); };
+  const addOne = (e) => {
+    if (S.boxes.length >= c.MAX_BOXES && !S.examples) { msg.textContent = ''; msg.append(strip('bad', 'Too many boxes', `The list holds up to ${c.MAX_BOXES}.`)); return; }
+    if (S.examples) S.boxes = [];
+    const b = c.blankBox(c.nextId(S.boxes, S.prefix, S.startNo), 'other', e.icon); fill(b, e);
+    S.boxes.push(b); S.sel = S.boxes.length - 1; buildList(); changed();
+    msg.textContent = ''; msg.append(strip('ok', 'Added', `${b.name} is ${b.id}. Pick another, or press Close.`));
   };
   const choose = (e) => {
+    if (adding) return addOne(e);
     if (!(box.name || box.kind || box.c1 || box.c2)) return apply(e);
     msg.textContent = '';
     msg.append(strip('warn', 'Replace this box?', `${box.name || box.id} already has text. ${e.name} would replace it.`, { label: 'Replace', run: () => apply(e) }, { label: 'Keep mine', run: () => { msg.textContent = ''; } }));
   };
   const draw = () => {
     out.textContent = '';
-    const hits = searchCatalog(q.value).slice(0, 60);
+    const hits = searchCatalog(q.value, S.catBrand);
     hits.forEach((e) => { const b = el('button', 'tl'); b.type = 'button'; b.innerHTML = iconSvg(e.icon); const s = el('span'); s.append(el('b', '', e.name)); b.append(s, el('em', '', `${e.brand} · ${e.kind}`)); b.onclick = () => choose(e); out.append(b); });
     if (!hits.length) out.append(el('p', 'small note', 'No tools match. Type your own in the box row.'));
   };
   q.oninput = draw; draw();
   const small = el('p', 'small', 'Tool names belong to their makers. Check the name against your tool. '); small.append(el('span', 'mono', `Catalog ${CATALOG_DATE}`));
-  const tools = el('div', 'tools'); tools.append(button('key', 'Type my own', closePanel), el('span', 'sp'), button('key', 'Close', closePanel));
-  p.append(q, out, msg, small, tools); q.focus();
+  const tools = el('div', 'tools'); if (!adding) tools.append(button('key', 'Type my own', closePanel)); tools.append(el('span', 'sp'), button('key', 'Close', closePanel));
+  p.append(tabs, q, msg, out, small, tools); q.focus();
 }
 
 function listPanel(p) {
@@ -366,7 +378,7 @@ function listPanel(p) {
   const tools = el('div', 'tools');
   tools.append(button('key go', 'Replace list', () => {
     const logo = c.newLogo(mark(), r.mark) ? r.mark : null, m = logo ? { kind: 'none' } : r.mark;
-    Object.assign(S, { profile: r.profile, custom: r.custom, owner: r.owner, prefix: r.prefix, groups: r.groups, inputs: r.inputs, route: r.route, paper: r.paper, boxes: r.boxes.length ? r.boxes : [c.blankBox(c.nextId([], r.prefix))], sel: 0, examples: false, panel: null, plan: null });
+    Object.assign(S, { profile: r.profile, custom: r.custom, owner: r.owner, prefix: r.prefix, startNo: r.startNo, groups: r.groups, inputs: r.inputs, route: r.route, paper: r.paper, boxes: r.boxes.length ? r.boxes : [c.blankBox(c.nextId([], r.prefix))], sel: 0, examples: false, panel: null, plan: null });
     if (!logo) applyMark(m); else { S.markTab = 'up'; S.logo = null; S.pending = { ...logo, white: false }; }
     syncInputs(); renderPanel(); buildList(); changed();
   }), button('key', 'Cancel', closePanel));
@@ -511,13 +523,14 @@ const TOUR = [
   { area: 'a1Strips', target: 'hlBox', title: 'Pick the box size', words: 'Everything starts with the box. Pick yours here, or choose Custom size and measure the space the label sits in. We\'ve picked the Systainer standard card, 84 × 54 mm.' },
   { area: 'a1Strips', target: 'hlMark', title: 'Add a logo', words: "This is your mark. It prints bottom right on every label. We've added a sample logo here. For your own, press Choose logo file or drop it in, and Box Ctrl asks you to confirm you own it or have permission." },
   { area: 'a1Strips', target: 'hlOwner', title: 'Add an owner line', words: 'This prints bottom left on every label, so a box finds its way home. Try your own wording, or leave it blank.' },
-  { area: 'a2Strips', target: 'boxes', title: 'Fill in a box', words: 'This part changes on each label. Type the name, kind and contents. The magnifier picks from the tool catalog, the icon button picks an icon, and Open file brings in a whole spreadsheet.' },
-  { area: 'a2Strips', target: 'openGroups', title: 'Colour a group', words: 'Groups colour the band, so you can read a shelf at a glance. Press Manage groups to change one, and every box in it follows.' },
+  { area: 'a2Strips', target: 'boxes', title: 'Fill in a box', words: 'This part changes on each label. Type the name, kind and contents, and the icon button picks an icon. Open file brings in a whole spreadsheet.' },
+  { area: 'a2Strips', target: 'addCatalog', open: true, title: 'Add standard tools', words: "You don't have to type your tools. Standard tools from Festool, Milwaukee, DEWALT, Bosch and Makita are already loaded. Pick a maker, pick a tool, and it adds a box in that maker's group, ready to edit. Try one. The magnifier on a row fills in just that box." },
+  { area: 'a2Strips', target: 'openGroups', title: 'Colour a group', words: "Groups colour the band, so you can read a shelf at a glance. Each maker already has one. Press Manage groups to change a colour, and every box in it follows." },
   { area: 'a2Strips', target: 'art2', title: 'Check the label', words: 'This is the selected box, as it prints. Pick another row to see it. Anything too small or left off shows up as a note, with what to do.' },
   { area: 'a3Strips', target: 'routeSeg', title: 'Print', words: 'Liene PixCut gives you sheets of three, with the exact settings to type into the Liene app. Office printer gives you pages with crop marks, to print on card stock and trim. Try both.' },
 ];
 function startTour() {
-  const keep = ['profile', 'custom', 'owner', 'prefix', 'groups', 'boxes', 'inputs', 'route', 'paper', 'sel', 'markTab', 'logo', 'textMark', 'iconMark', 'examples'];
+  const keep = ['profile', 'custom', 'owner', 'prefix', 'startNo', 'groups', 'boxes', 'inputs', 'route', 'paper', 'sel', 'markTab', 'logo', 'textMark', 'iconMark', 'examples'];
   const saved = JSON.parse(JSON.stringify(Object.fromEntries(keep.map((k) => [k, S[k]]))));
   const sample = c.sampleState();
   Object.assign(S, sample, { markTab: 'up', logo: sample.mark, textMark: { text: '', frame: 'none' }, iconMark: '', examples: false, panel: null, plan: null, pending: null, logoNote: '', fileNote: '' });
@@ -536,6 +549,9 @@ function exitTour() {
 function showStep() {
   document.querySelectorAll('.hl').forEach((e) => e.classList.remove('hl'));
   const t = S.tour; if (!t || t.done) { refresh(); return; }
+  const opened = S.panel === 'tools' && S.plan?.add;
+  if (TOUR[t.step].open && !opened) openPanel('tools', { add: true });
+  if (!TOUR[t.step].open && opened) closePanel();
   const step = TOUR[t.step], target = step.target === 'boxes' ? $('boxes').querySelector('.rowwrap') : $(step.target);
   target.classList.add('hl'); refresh();
   const smooth = !matchMedia('(prefers-reduced-motion:reduce)').matches;
@@ -547,7 +563,7 @@ function coach() {
   if (t.done) {
     const tools = el('div', 'tools');
     tools.append(button('key go', 'Start my own labels', exitTour), button('key', 'Save sample sheet', () => (S.route === 'office' ? printOffice() : saveSheets())));
-    d.append(el('h3', '', "That's a full set of labels"), el('p', 'note', 'You picked a box size, added a logo and an owner line, filled in your boxes and set up a print. Save this sheet to try a print, or start your own. Your own list is just as you left it.'), tools);
+    d.append(el('h3', '', "That's a full set of labels"), el('p', 'note', 'You picked a box size, added a logo and an owner line, filled in your boxes, saw the standard tools and set up a print. Save this sheet to try a print, or start your own. Your own list is just as you left it.'), tools);
     return d;
   }
   const step = TOUR[t.step], tools = el('div', 'tools');
@@ -614,13 +630,20 @@ function refresh(keepNote) {
   const pn = $('prefixNote'), off = c.offPrefix(S.boxes, S.prefix);
   pn.textContent = '';
   if (S.undoIds) pn.append(strip('ok', 'Done', `${S.undoIds.length} IDs changed.`, { label: 'Undo', run: () => { S.boxes.forEach((b, i) => { b.id = S.undoIds[i]; }); S.undoIds = null; buildList(); changed(); } }));
-  else if (off && !S.examples) pn.append(strip('', 'New boxes only', `New boxes will start ${S.prefix}. ${off} box${off === 1 ? ' keeps its' : 'es keep their'} ID. Change them if you haven't printed yet, so labels match.`, { label: `Change all to ${S.prefix}`, run: changeAll }));
+  else if (!S.examples && (off || S.startNo > 1)) {
+    const next = c.nextId(S.boxes, S.prefix, S.startNo), acts = [];
+    if (off) acts.push({ label: `Change all to ${S.prefix}`, run: changeAll });
+    if (S.startNo > 1) acts.push({ label: `Number all from ${S.startNo}`, run: numberAll });
+    pn.append(strip('', 'New boxes only', `The next box will be ${next}. Boxes on this list keep their IDs, so printed labels still match. Printed some already? Set their Quantity to 0.`, ...acts));
+  }
 
   // Area 2
   if (!S.stored && !S.tour) a2.append(strip('warn', 'Not saving', "This browser isn't keeping your list. Export it before you close.", { label: 'Export list', run: exportList }));
   if (S.fileNote) a2.append(strip('bad', 'File', S.fileNote));
   $('examples').hidden = !S.examples;
+  $('catalogHint').hidden = !S.examples || S.panel === 'tools';
   $('exportList').disabled = $('openFile').disabled = !!S.tour;
+  $('addCatalog').classList.toggle('hl', !!S.tour && !S.tour.done && TOUR[S.tour.step].target === 'addCatalog');
   state('a2State', !S.stored ? 'Not saving' : notes.flagged ? `${notes.flagged} box${notes.flagged === 1 ? '' : 'es'} to check` : total ? `${S.boxes.length} box${S.boxes.length === 1 ? '' : 'es'}` : '0 labels', !S.stored || notes.flagged ? 'warn' : total ? 'ok' : 'idle');
   $('fill').textContent = total ? `${total} label${total === 1 ? '' : 's'} on ${sheets} ${unit}${sheets === 1 ? '' : 's'} · ${sheets * cap.n - total ? `${sheets * cap.n - total} open spot${sheets * cap.n - total === 1 ? '' : 's'} on ${unit} ${sheets}` : `last ${unit} is full`}` : 'No labels yet';
   drawPreview($('art2'), $('art2').parentElement.clientWidth, false);
@@ -659,10 +682,16 @@ function changeAll() {
   buildList(); changed(); S.undoIds = ids; refresh();
 }
 
+function numberAll() {
+  const ids = S.boxes.map((b) => b.id), next = c.renumber(S.boxes, S.prefix, S.startNo);
+  S.boxes.forEach((b, i) => { b.id = next[i].id; });
+  buildList(); changed(); S.undoIds = ids; refresh();
+}
+
 function exportList() { download(new Blob([JSON.stringify(c.writeList(listOf()), null, 2)], { type: 'application/json' }), c.listName()); }
 
 function syncInputs() {
-  $('customW').value = S.custom.W; $('customH').value = S.custom.H; $('owner').value = S.owner; $('prefix').value = S.prefix;
+  $('customW').value = S.custom.W; $('customH').value = S.custom.H; $('owner').value = S.owner; $('prefix').value = S.prefix; $('startNo').value = S.startNo;
   $('textMark').value = S.textMark.text; $('B').value = S.inputs.B; $('G').value = S.inputs.G;
   Object.keys(bad).forEach((k) => { bad[k] = ''; });
   ['customW', 'customH', 'B', 'G'].forEach((k) => $(k).classList.remove('bad'));
@@ -692,6 +721,13 @@ document.querySelectorAll('#paperSeg button').forEach((b) => { b.onclick = () =>
 $('textMark').oninput = () => { S.textMark.text = $('textMark').value; changed(); };
 $('owner').oninput = () => { S.owner = $('owner').value; changed(); };
 $('prefix').oninput = () => { S.prefix = $('prefix').value; S.undoIds = null; save(); refresh(); };
+$('startNo').oninput = () => {
+  const n = c.clampStart($('startNo').value); $('startNo').classList.toggle('bad', !n);
+  bad['Start numbering at'] = n ? '' : "Start numbering at can't be that. Enter a whole number from 1 to 99999.";
+  if (n) S.startNo = n;
+  S.undoIds = null; save(); refresh();
+};
+$('addCatalog').onclick = () => (S.panel === 'tools' && S.plan?.add ? closePanel() : openPanel('tools', { add: true }));
 $('chooseLogo').onclick = $('replaceLogo').onclick = () => $('logoInput').click();
 $('removeLogo').onclick = () => { S.logo = null; changed(); };
 $('logoInput').onchange = (e) => { openLogo(e.target.files[0]); e.target.value = ''; };
@@ -699,7 +735,7 @@ $('chooseMarkIcon').onclick = () => openPanel('icons', { target: 'mark' });
 $('add').onclick = () => {
   if (S.boxes.length >= c.MAX_BOXES) return fileError(`The list holds up to ${c.MAX_BOXES} boxes.`);
   const sel = S.boxes[S.sel];
-  S.boxes.push(c.blankBox(c.nextId(S.boxes, S.prefix), sel?.groupId ?? c.OTHER, sel?.icon ?? '')); S.sel = S.boxes.length - 1; buildList(); changed();
+  S.boxes.push(c.blankBox(c.nextId(S.boxes, S.prefix, S.startNo), sel?.groupId ?? c.OTHER, sel?.icon ?? '')); S.sel = S.boxes.length - 1; buildList(); changed();
   $('boxes').querySelectorAll('.nm')[S.sel].focus();
 };
 $('openGroups').onclick = () => (S.panel === 'groups' ? closePanel() : openPanel('groups'));

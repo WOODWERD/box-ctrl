@@ -95,6 +95,7 @@ details.alltools[open]>summary::after{content:"▴";color:var(--accent-text)}
 .segc button{height:32px;min-width:34px;padding:0 13px;background:transparent;border:0;color:var(--ink);font:500 var(--t-cap) Inter,Arial,sans-serif;cursor:pointer}
 .segc button+button{border-left:1px solid var(--strong)}
 .segc button[aria-pressed="true"]{background:var(--ink);color:var(--ground)}
+.segc.wrap{flex-wrap:wrap}
 
 .health{display:flex;flex-wrap:wrap;gap:3px 13px;align-items:baseline;border:1px solid var(--strong);border-radius:8px;padding:13px;font-size:var(--t-cap);color:var(--soft)}
 .health b{font-weight:600;color:var(--ink);display:inline-flex;align-items:center;gap:8px}

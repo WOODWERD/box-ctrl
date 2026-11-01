@@ -87,10 +87,92 @@ const MILWAUKEE = [
   ['SAWZALL BLADES', 'Saw blades', 'Wood · metal', 'Demolition', 'saw-blade', 'consumable'],
 ];
 
-const build = (brand, rows) => rows.map(([name, kind, c1, c2, icon, tier]) => ({ brand, name, kind, c1, c2, icon, tier }));
-export const CATALOG = [...build('Festool', FESTOOL), ...build('Milwaukee', MILWAUKEE)];
+// Plain descriptive names, not model numbers (BX-R106). Lines checked by web research 2026-11-01.
+const DEWALT = [
+  ['XR DRILL', 'Drill / driver', 'Drill · side handle', 'Battery · charger', 'drill', 'power'],
+  ['XR HAMMER DRILL', 'Hammer drill / driver', 'Hammer drill · side handle', 'Battery · charger', 'hammer-drill', 'power'],
+  ['XR IMPACT DRIVER', 'Impact driver', 'Impact driver · bits', 'Battery · charger', 'impact-driver', 'power'],
+  ['XR IMPACT WRENCH', 'Impact wrench', 'Impact wrench · sockets', 'Battery · charger', 'impact-wrench', 'power'],
+  ['ATOMIC DRILL', 'Compact drill / driver', 'Drill · bit holder', 'Battery · charger', 'drill', 'power'],
+  ['ATOMIC IMPACT', 'Compact impact driver', 'Impact driver · bits', 'Battery · charger', 'impact-driver', 'power'],
+  ['XR ROTARY HAMMER', 'Rotary hammer', 'SDS hammer · side handle', 'Depth stop', 'hammer-drill', 'power'],
+  ['XR CIRCULAR SAW', 'Circular saw', 'Circular saw · blade', 'Rip fence', 'circular-saw', 'power'],
+  ['FLEXVOLT TRACK SAW', 'Track saw', 'Plunge saw · blade', 'Splinter guard', 'track-saw', 'power'],
+  ['FLEXVOLT MITER SAW', 'Miter saw', 'Miter saw · blade', 'Dust bag', 'miter-saw', 'power'],
+  ['FLEXVOLT TABLE SAW', 'Table saw', 'Table saw · blade', 'Rip fence', 'table-saw', 'power'],
+  ['XR JIGSAW', 'Jigsaw', 'Jigsaw · blades', '', 'jigsaw', 'power'],
+  ['XR RECIP SAW', 'Reciprocating saw', 'Saw · blades', '', 'recip-saw', 'power'],
+  ['XR MULTI-TOOL', 'Oscillating multi-tool', 'Multi-tool · blades', 'Depth stop', 'multi-tool', 'power'],
+  ['XR GRINDER', 'Angle grinder', 'Grinder · guard', 'Side handle', 'grinder', 'power'],
+  ['XR COMPACT ROUTER', 'Compact router', 'Router · edge guide', 'Collets', 'router', 'power'],
+  ['XR ORBIT SANDER', 'Random orbital sander', 'Sander · pad', 'Dust bag', 'sander', 'power'],
+  ['XR PLANER', 'Planer', 'Planer · blades', 'Edge guide', 'planer', 'power'],
+  ['XR BRAD NAILER', 'Brad nailer', 'Nailer · nose tips', '', 'nailer', 'power'],
+  ['XR FINISH NAILER', 'Finish nailer', 'Nailer · nose tips', '', 'nailer', 'power'],
+  ['XR FRAMING NAILER', 'Framing nailer', 'Nailer · nose tips', '', 'nailer', 'power'],
+  ['XR WET DRY VAC', 'Wet / dry vacuum', 'Vacuum · hose', 'Filter', 'extractor', 'power'],
+  ['XR WORK LIGHT', 'Work light', 'Light', '', 'light', 'power'],
+  ['20V BATTERIES', 'Batteries / chargers', '20V packs', 'Charger', 'battery', 'power'],
+  ['FLEXVOLT BATTERIES', 'Batteries / chargers', 'FLEXVOLT packs', 'Charger', 'battery', 'power'],
+];
 
-export function searchCatalog(q, list = CATALOG) {
+const BOSCH = [
+  ['PROFACTOR DRILL', 'Drill / driver', 'Drill · side handle', 'Battery · charger', 'drill', 'power'],
+  ['PROFACTOR HAMMER', 'Hammer drill / driver', 'Hammer drill · side handle', 'Battery · charger', 'hammer-drill', 'power'],
+  ['PROFACTOR WRENCH', 'Impact wrench', 'Impact wrench · sockets', 'Battery · charger', 'impact-wrench', 'power'],
+  ['PROFACTOR CIRC SAW', 'Circular saw', 'Circular saw · blade', 'Rip fence', 'circular-saw', 'power'],
+  ['PROFACTOR TRACK SAW', 'Track saw', 'Plunge saw · blade', 'Splinter guard', 'track-saw', 'power'],
+  ['PROFACTOR MITER SAW', 'Miter saw', 'Miter saw · blade', 'Dust bag', 'miter-saw', 'power'],
+  ['18V IMPACT DRIVER', 'Impact driver', 'Impact driver · bits', 'Battery · charger', 'impact-driver', 'power'],
+  ['18V ROTARY HAMMER', 'Rotary hammer', 'SDS hammer · side handle', 'Depth stop', 'hammer-drill', 'power'],
+  ['18V JIGSAW', 'Jigsaw', 'Jigsaw · blades', '', 'jigsaw', 'power'],
+  ['18V RECIP SAW', 'Reciprocating saw', 'Saw · blades', '', 'recip-saw', 'power'],
+  ['18V MULTI-TOOL', 'Oscillating multi-tool', 'Multi-tool · blades', 'Depth stop', 'multi-tool', 'power'],
+  ['18V GRINDER', 'Angle grinder', 'Grinder · guard', 'Side handle', 'grinder', 'power'],
+  ['18V PALM ROUTER', 'Palm router', 'Router · edge guide', 'Collets', 'router', 'power'],
+  ['18V ORBIT SANDER', 'Random orbital sander', 'Sander · pad', 'Dust bag', 'sander', 'power'],
+  ['18V VACUUM', 'Wet / dry vacuum', 'Vacuum · hose', 'Filter', 'extractor', 'power'],
+  ['12V DRILL', 'Compact drill / driver', 'Drill · bit holder', 'Battery · charger', 'drill', 'power'],
+  ['12V IMPACT', 'Compact impact driver', 'Impact driver · bits', 'Battery · charger', 'impact-driver', 'power'],
+  ['LASER LEVEL', 'Line laser', 'Laser · mount', 'Target plate', 'laser-level', 'power'],
+  ['18V BATTERIES', 'Batteries / chargers', '18V packs', 'Charger', 'battery', 'power'],
+];
+
+const MAKITA = [
+  ['LXT DRILL', 'Drill / driver', 'Drill · side handle', 'Battery · charger', 'drill', 'power'],
+  ['LXT HAMMER DRILL', 'Hammer drill / driver', 'Hammer drill · side handle', 'Battery · charger', 'hammer-drill', 'power'],
+  ['LXT IMPACT DRIVER', 'Impact driver', 'Impact driver · bits', 'Battery · charger', 'impact-driver', 'power'],
+  ['LXT IMPACT WRENCH', 'Impact wrench', 'Impact wrench · sockets', 'Battery · charger', 'impact-wrench', 'power'],
+  ['LXT ROTARY HAMMER', 'Rotary hammer', 'SDS hammer · side handle', 'Depth stop', 'hammer-drill', 'power'],
+  ['LXT CIRCULAR SAW', 'Circular saw', 'Circular saw · blade', 'Rip fence', 'circular-saw', 'power'],
+  ['LXT MITER SAW', 'Miter saw', 'Miter saw · blade', 'Dust bag', 'miter-saw', 'power'],
+  ['LXT JIGSAW', 'Jigsaw', 'Jigsaw · blades', '', 'jigsaw', 'power'],
+  ['LXT RECIP SAW', 'Reciprocating saw', 'Saw · blades', '', 'recip-saw', 'power'],
+  ['LXT MULTI-TOOL', 'Oscillating multi-tool', 'Multi-tool · blades', 'Depth stop', 'multi-tool', 'power'],
+  ['LXT GRINDER', 'Angle grinder', 'Grinder · guard', 'Side handle', 'grinder', 'power'],
+  ['LXT COMPACT ROUTER', 'Compact router', 'Router · edge guide', 'Collets', 'router', 'power'],
+  ['LXT ORBIT SANDER', 'Random orbital sander', 'Sander · pad', 'Dust bag', 'sander', 'power'],
+  ['LXT PLANER', 'Planer', 'Planer · blades', 'Edge guide', 'planer', 'power'],
+  ['LXT PIN NAILER', 'Pin nailer', 'Nailer · nose tips', '', 'nailer', 'power'],
+  ['LXT FINISH NAILER', 'Finish nailer', 'Nailer · nose tips', '', 'nailer', 'power'],
+  ['LXT FRAMING NAILER', 'Framing nailer', 'Nailer · nose tips', '', 'nailer', 'power'],
+  ['LXT DUST EXTRACTOR', 'Wet / dry extractor', 'Extractor · hose', 'Filter', 'extractor', 'power'],
+  ['LXT WORK LIGHT', 'Work light', 'Light', '', 'light', 'power'],
+  ['XGT DRILL', 'Drill / driver', 'Drill · side handle', 'Battery · charger', 'drill', 'power'],
+  ['XGT TRACK SAW', 'Track saw', 'Plunge saw · blade', 'Splinter guard', 'track-saw', 'power'],
+  ['XGT COMPACT ROUTER', 'Compact router', 'Router · edge guide', 'Collets', 'router', 'power'],
+  ['XGT PLANER', 'Planer', 'Planer · blades', 'Edge guide', 'planer', 'power'],
+  ['XGT ORBIT SANDER', 'Random orbital sander', 'Sander · pad', 'Dust bag', 'sander', 'power'],
+  ['XGT FRAMING NAILER', 'Framing nailer', 'Nailer · nose tips', '', 'nailer', 'power'],
+  ['LXT BATTERIES', 'Batteries / chargers', '18V packs', 'Charger', 'battery', 'power'],
+  ['XGT BATTERIES', 'Batteries / chargers', '40V packs', 'Charger', 'battery', 'power'],
+];
+
+export const BRANDS = ['Festool', 'Milwaukee', 'DEWALT', 'Bosch', 'Makita'];
+const build = (brand, rows) => rows.map(([name, kind, c1, c2, icon, tier]) => ({ brand, name, kind, c1, c2, icon, tier }));
+export const CATALOG = [...build('Festool', FESTOOL), ...build('Milwaukee', MILWAUKEE), ...build('DEWALT', DEWALT), ...build('Bosch', BOSCH), ...build('Makita', MAKITA)];
+
+export function searchCatalog(q, brand = 'All', list = CATALOG) {
   const words = String(q).trim().toLowerCase().split(/\s+/).filter(Boolean);
-  return list.filter((c) => { const t = `${c.brand} ${c.name} ${c.kind}`.toLowerCase(); return words.every((w) => t.includes(w)); });
+  return list.filter((c) => { const t = `${c.brand} ${c.name} ${c.kind}`.toLowerCase(); return (brand === 'All' || c.brand === brand) && words.every((w) => t.includes(w)); });
 }

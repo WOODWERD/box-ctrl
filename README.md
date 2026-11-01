@@ -9,7 +9,7 @@ Pick your box, add your logo, list what's in each box, and print.
 - **Fits your box.** Built-in sizes for the Systainer standard and Systainer³ S cards, or enter your own. Long, thin labels get their own layout.
 - **Your mark.** Upload a logo, or use a text mark, a library icon, or none.
 - **A free icon library.** 52 tool icons, drawn or MIT licensed.
-- **A tool catalog.** Find a Festool or Milwaukee tool and it fills in the label.
+- **Standard tools from manufacturers.** Already loaded: pick from Festool, Milwaukee, DEWALT, Bosch and Makita lists, and it fills in the label or adds the box.
 - **Groups.** Colour the bands by kind of box. Change a group and its labels follow.
 - **Excel and CSV import.** Fill in the template, then see what will be added before anything changes.
 - **Two ways to print.** Sheets for the Liene PixCut S1 with the exact settings, or pages with crop marks for an office printer.
@@ -43,4 +43,4 @@ Then open <http://localhost:8139>.
 
 © 2026 WOODWERD LLC, [MIT licence](LICENSE). See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for the fonts and icons it distributes. The MIT licence doesn't cover the WOODWERD mark.
 
-Box Ctrl is an independent project. It is not affiliated with or endorsed by any toolmaker or printer maker. Festool, Systainer, Milwaukee, Liene and PixCut are trademarks of their owners. Product names in the tool catalog belong to their owners and identify the tools only.
+Box Ctrl is an independent project. It is not affiliated with or endorsed by any toolmaker or printer maker. Festool, Systainer, Milwaukee, DEWALT, Bosch, Makita, Liene and PixCut are trademarks of their owners. Product names in the standard tools list belong to their owners and identify the tools only.

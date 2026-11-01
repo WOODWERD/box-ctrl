@@ -36,7 +36,7 @@ export function rangeError(r, raw) {
 
 // ---------- colour (BX-R23 to BX-R25) ----------
 export const PALETTE = [
-  { name: 'Green', hex: '#6CB33F' }, { name: 'Red', hex: '#DB011C' }, { name: 'Gold', hex: '#E3AE00' }, { name: 'Blue', hex: '#3A93C9' },
+  { name: 'Green', hex: '#6CB33F' }, { name: 'Red', hex: '#DB011C' }, { name: 'Gold', hex: '#E3AE00' }, { name: 'Blue', hex: '#3A93C9' }, { name: 'Teal', hex: '#00909E' },
   { name: 'Forest', hex: '#1F6B3F' }, { name: 'Purple', hex: '#7A4FA0' }, { name: 'Charcoal', hex: '#2B2D31' }, { name: 'Black', hex: '#000000' },
   { name: 'Steel', hex: '#9AA3AB' }, { name: 'Sand', hex: '#D8C59A' }, { name: 'Clay', hex: '#C8A58C' }, { name: 'Stone', hex: '#D6D2C8' },
 ];
@@ -56,16 +56,29 @@ const mix = (fg, bg, t) => '#' + rgb(fg).map((v, i) => Math.round(v * t + rgb(bg
 export const contentsColour = (ink, band) => { const m = mix(ink, band, 0.85); return contrast(m, band) >= 4.5 ? m : ink; };
 
 export const OTHER = 'other';
+// Spelled as each maker writes its name online (BX-R39)
+export const MAKERS = [['festool', 'Festool', 'Green'], ['milwaukee', 'Milwaukee', 'Red'], ['dewalt', 'DEWALT', 'Gold'], ['bosch', 'Bosch', 'Blue'], ['makita', 'Makita', 'Teal']];
 export const startGroups = () => [
-  { id: 'power', name: 'Power tools', color: hex('Green') }, { id: 'hand', name: 'Hand tools', color: hex('Black') },
+  ...MAKERS.map(([id, name, colour]) => ({ id, name, color: hex(colour) })),
+  { id: 'power', name: 'Power tools', color: hex('Forest') }, { id: 'hand', name: 'Hand tools', color: hex('Black') },
   { id: 'consumable', name: 'Consumables', color: hex('Sand') }, { id: 'kit', name: 'Kits', color: hex('Charcoal') },
   { id: OTHER, name: 'Other', color: hex('Stone') },
 ];
 
+// The group for a catalog entry, added if this list doesn't have one (BX-R103)
+export function groupForEntry(groups, e) {
+  if (e.tier === 'consumable') { const g = groups.find((x) => x.id === 'consumable'); if (g) return g.id; }
+  const m = MAKERS.find((x) => x[1] === e.brand);
+  const have = groups.find((x) => x.name.toLowerCase() === e.brand.toLowerCase());
+  if (have) return have.id;
+  const g = { id: m[0], name: m[1], color: hex(m[2]) }; groups.splice(Math.max(0, groups.length - 1), 0, g);
+  return g.id;
+}
+
 export const slug = () => 'g' + Math.random().toString(36).slice(2, 9);
 export function nextColour(groups) {
   const used = new Set(groups.map((g) => g.color.toUpperCase()));
-  return (PALETTE.find((p) => !used.has(p.hex)) || PALETTE[6]).hex;
+  return (PALETTE.find((p) => !used.has(p.hex)) || PALETTE[7]).hex;
 }
 export function removeGroup(state, id) {
   if (id === OTHER) return 0;
@@ -95,20 +108,23 @@ export const exampleBoxes = () => [
 // The tutorial's sample list (BX-R122)
 export const SAMPLE_LOGO = { kind: 'img', src: 'woodwerd-sample-logo.png', file: 'woodwerd-sample-logo.png', w: 640, h: 296, sample: true };
 export const sampleState = () => ({
-  profile: 'sys-standard', custom: { W: 120, H: 25 }, mark: { ...SAMPLE_LOGO }, owner: 'Property of WOODWERD', prefix: 'BOX-',
+  profile: 'sys-standard', custom: { W: 120, H: 25 }, mark: { ...SAMPLE_LOGO }, owner: 'Property of WOODWERD', prefix: 'BOX-', startNo: 1,
   groups: startGroups(), boxes: exampleBoxes().filter((b) => ['BOX-001', 'BOX-002', 'BOX-005'].includes(b.id)), inputs: { ...DEFAULTS }, route: 'liene', paper: 'letter', sel: 0,
 });
 
 // ---------- boxes (BX-R30 to BX-R37) ----------
 export const clampQty = (q) => Math.max(0, Math.min(99, Math.round(+q || 0)));
-export function nextId(boxes, prefix) {
+export const clampStart = (v) => { const n = Math.floor(+v); return n >= 1 && n <= 99999 ? n : 0; };
+export function nextId(boxes, prefix, start = 1) {
   const p = prefix.toUpperCase(); let top = 0;
   boxes.forEach((b) => {
     const t = String(b.id || '').toUpperCase();
     if (t.startsWith(p)) { const m = t.slice(p.length).match(/^\d+$/); if (m) top = Math.max(top, +m[0]); }
   });
-  return `${prefix}${String(top + 1).padStart(3, '0')}`;
+  return `${prefix}${String(Math.max(top + 1, start)).padStart(3, '0')}`;
 }
+// Every box in list order from the start number (BX-R131)
+export const renumber = (boxes, prefix, start) => boxes.map((b, i) => ({ ...b, id: `${prefix}${String(start + i).padStart(3, '0')}` }));
 // Swaps the prefix and keeps each number. Boxes with no number take the next free one (BX-R32).
 export function applyPrefix(boxes, prefix) {
   const out = boxes.map((b) => { const m = String(b.id || '').match(/(\d+)$/); return { ...b, id: m ? `${prefix}${m[1]}` : '' }; });
@@ -263,7 +279,7 @@ export function planImport(state, read, base = state.boxes) {
   const boxes = read.rows.map((r) => {
     let g = r.group ? groups.find((x) => x.name.toLowerCase() === r.group.toLowerCase()) : groups.find((x) => x.id === OTHER);
     if (!g) { g = { id: slug(), name: r.group, color: nextColour(groups) }; groups.push(g); added.push(g.name); }
-    const b = { id: r.id || nextId(made, state.prefix), name: r.name, kind: r.kind, c1: r.c1, c2: r.c2, groupId: g.id, icon: r.icon, qty: r.qty };
+    const b = { id: r.id || nextId(made, state.prefix, state.startNo || 1), name: r.name, kind: r.kind, c1: r.c1, c2: r.c2, groupId: g.id, icon: r.icon, qty: r.qty };
     made.push(b);
     return b;
   });
@@ -337,12 +353,12 @@ export function readList(o) {
     if (/^#[0-9a-f]{6}$/i.test(g.text || '')) out.text = g.text;
     return out;
   });
-  if (!groups.some((g) => g.id === OTHER)) groups.push(startGroups()[4]);
+  if (!groups.some((g) => g.id === OTHER)) groups.push(startGroups().find((g) => g.id === OTHER));
   const ids = new Set(groups.map((g) => g.id)), i = o.inputs || {};
   return {
     profile: PROFILES.some((p) => p.id === o.profile) || o.profile === 'custom' ? o.profile : PROFILES[0].id,
     custom: { W: num(o.custom?.W, CUSTOM.W, 120), H: num(o.custom?.H, CUSTOM.H, 25) },
-    mark: readMark(o.mark), owner: text(o.owner, LIMITS.owner), prefix: text(o.prefix, LIMITS.prefix) || 'BOX-', groups,
+    mark: readMark(o.mark), owner: text(o.owner, LIMITS.owner), prefix: text(o.prefix, LIMITS.prefix) || 'BOX-', startNo: clampStart(o.startNo) || 1, groups,
     inputs: { B: num(i.B, INPUTS.B, DEFAULTS.B), G: num(i.G, INPUTS.G, DEFAULTS.G) },
     route: o.route === 'office' ? 'office' : 'liene', paper: o.paper === 'a4' ? 'a4' : 'letter',
     boxes: o.boxes.map((b) => ({
@@ -351,7 +367,7 @@ export function readList(o) {
     })),
   };
 }
-export const writeList = (s) => ({ version: 1, profile: s.profile, custom: s.custom, mark: s.mark, owner: s.owner, prefix: s.prefix, groups: s.groups, inputs: s.inputs, route: s.route, paper: s.paper, boxes: s.boxes });
+export const writeList = (s) => ({ version: 1, profile: s.profile, custom: s.custom, mark: s.mark, owner: s.owner, prefix: s.prefix, startNo: s.startNo || 1, groups: s.groups, inputs: s.inputs, route: s.route, paper: s.paper, boxes: s.boxes });
 
 // A list file needs the acknowledgement only when it brings a logo not already here (BX-R110)
 export const newLogo = (current, incoming) => incoming.kind === 'img' && !(current.kind === 'img' && current.src === incoming.src);

@@ -5,7 +5,7 @@ import { readFileSync, existsSync } from 'node:fs';
 import { homedir } from 'node:os';
 import * as c from '../site/core.js';
 import { ICONS, searchIcons } from '../site/icons.js';
-import { CATALOG, searchCatalog } from '../site/catalog.js';
+import { CATALOG, BRANDS, searchCatalog } from '../site/catalog.js';
 
 const near = (a, b, e = 0.01) => assert.ok(Math.abs(a - b) <= e, `${a} is not near ${b}`);
 const em = (t) => t.length * 0.6; // stands in for canvas text measuring
@@ -44,7 +44,7 @@ test('BX-A09 file names use the local date', () => {
 });
 
 test('BX-A10 palette contrast', () => {
-  const want = { Green: ['#000000', 8.2], Red: ['#FFFFFF', 5.2], Gold: ['#000000', 10.3], Blue: ['#000000', 6.2], Forest: ['#FFFFFF', 6.5], Purple: ['#FFFFFF', 6.1], Charcoal: ['#FFFFFF', 13.8], Black: ['#FFFFFF', 21], Steel: ['#000000', 8.2], Sand: ['#000000', 12.4], Clay: ['#000000', 9.2], Stone: ['#000000', 13.9] };
+  const want = { Green: ['#000000', 8.2], Red: ['#FFFFFF', 5.2], Gold: ['#000000', 10.3], Blue: ['#000000', 6.2], Teal: ['#000000', 5.5], Forest: ['#FFFFFF', 6.5], Purple: ['#FFFFFF', 6.1], Charcoal: ['#FFFFFF', 13.8], Black: ['#FFFFFF', 21], Steel: ['#000000', 8.2], Sand: ['#000000', 12.4], Clay: ['#000000', 9.2], Stone: ['#000000', 13.9] };
   c.PALETTE.forEach((p) => {
     const t = c.autoText(p.hex); assert.equal(t, want[p.name][0], p.name);
     near(c.contrast(p.hex, t), want[p.name][1], 0.06);
@@ -66,7 +66,7 @@ test('contents print solid where 85 % would miss 4.5:1', () => {
 
 test('BX-A13 a group colour change reaches its boxes', () => {
   const groups = c.startGroups(), boxes = [box(), box(), box(), box()];
-  groups[0].color = '#DB011C';
+  groups.find((g) => g.id === 'power').color = '#DB011C';
   assert.ok(boxes.every((b) => groups.find((g) => g.id === b.groupId).color === '#DB011C'));
 });
 
@@ -85,7 +85,7 @@ test('BX-A15 Drew\'s list imports whole', { skip: !existsSync(CSV) && 'private f
   assert.deepEqual(read.unused, ['tier', 'model', 'systainer', 'location', 'label_status', 'notes']);
   const plan = c.planImport(S(), read);
   assert.equal(plan.boxes[0].id, 'ST-001'); assert.equal(plan.boxes[0].c2, 'Splinter guard');
-  assert.ok(plan.added.includes('festool'));
+  assert.ok(!plan.added.includes('festool')); assert.equal(plan.boxes[0].groupId, 'festool');
 });
 
 test('BX-A16 columns in any order', () => {
@@ -174,6 +174,40 @@ test('BX-A70 Change all keeps each number', () => {
   const r = c.applyPrefix([box({ id: 'ST-001' }), box({ id: 'ST-200' }), box({ id: '' })], 'SYS-');
   assert.deepEqual(r.map((b) => b.id), ['SYS-001', 'SYS-200', 'SYS-201']);
 });
+test('BX-A72 the start number sets the next ID', () => {
+  assert.equal(c.nextId([box({ id: 'BOX-003' })], 'BOX-', 41), 'BOX-041');
+});
+test('BX-A73 the next free number wins when it is higher', () => {
+  assert.equal(c.nextId([box({ id: 'BOX-050' })], 'BOX-', 41), 'BOX-051');
+});
+test('BX-A74 Number all runs in list order', () => {
+  assert.deepEqual(c.renumber([box(), box(), box()], 'BOX-', 41).map((b) => b.id), ['BOX-041', 'BOX-042', 'BOX-043']);
+});
+test('blank spreadsheet IDs follow the start number', () => {
+  const plan = c.planImport({ ...S(), startNo: 41 }, c.readTable([['Name'], ['SAW']]));
+  assert.equal(plan.boxes[0].id, 'BOX-041');
+});
+test('BX-A75 tabs limit the search', () => {
+  const hits = searchCatalog('drill', 'Bosch');
+  assert.ok(hits.length > 0 && hits.every((e) => e.brand === 'Bosch'));
+});
+test('all five brands have a standard set', () => {
+  BRANDS.forEach((b) => assert.ok(CATALOG.filter((e) => e.brand === b).length >= 15, b));
+});
+test('BX-A77 a catalog pick lands in its maker group', () => {
+  const g = c.startGroups();
+  assert.equal(c.groupForEntry(g, { brand: 'Festool', tier: 'power' }), 'festool');
+  assert.equal(c.groupForEntry(g, { brand: 'Festool', tier: 'consumable' }), 'consumable');
+  const old = g.filter((x) => x.id !== 'milwaukee');
+  assert.equal(c.groupForEntry(old, { brand: 'Milwaukee', tier: 'power' }), 'milwaukee');
+  assert.equal(old.find((x) => x.id === 'milwaukee').color, '#DB011C');
+  assert.equal(old.at(-1).id, 'other');
+});
+test('a renamed maker group still matches', () => {
+  const g = [{ id: 'g1', name: 'FESTOOL', color: '#6CB33F' }, { id: 'other', name: 'Other', color: '#D6D2C8' }];
+  assert.equal(c.groupForEntry(g, { brand: 'Festool', tier: 'power' }), 'g1');
+});
+test('makers are spelled their own way', () => assert.deepEqual(c.startGroups().slice(0, 5).map((g) => g.name), ['Festool', 'Milwaukee', 'DEWALT', 'Bosch', 'Makita']));
 test('symbol shortcuts', () => assert.equal(c.fixSymbols('A * B -> C <-> D'), 'A · B → C ↔ D'));
 
 test('custom sizes turn on the sheet', () => {
@@ -188,7 +222,7 @@ test('marks keep their proportions in the slot', () => {
 });
 
 test('BX-A54 every catalog entry is complete and clean', () => {
-  assert.ok(CATALOG.length > 60);
+  assert.ok(CATALOG.length > 120);
   CATALOG.forEach((e) => {
     assert.ok(e.brand && e.name && e.kind && e.tier, e.name);
     assert.ok(ICONS[e.icon], `${e.name}: ${e.icon}`);
