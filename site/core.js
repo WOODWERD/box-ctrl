@@ -38,7 +38,7 @@ export function rangeError(r, raw) {
 
 // ---------- colour (BX-R23 to BX-R25) ----------
 export const PALETTE = [
-  { name: 'Green', hex: '#6CB33F' }, { name: 'Red', hex: '#DB011C' }, { name: 'Gold', hex: '#E3AE00' }, { name: 'Blue', hex: '#3A93C9' }, { name: 'Teal', hex: '#00909E' },
+  { name: 'Green', hex: '#6CB33F' }, { name: 'Red', hex: '#DB011C' }, { name: 'Gold', hex: '#FEBD17' }, { name: 'Blue', hex: '#3A93C9' }, { name: 'Teal', hex: '#00909E' },
   { name: 'Forest', hex: '#1F6B3F' }, { name: 'Purple', hex: '#7A4FA0' }, { name: 'Charcoal', hex: '#2B2D31' }, { name: 'Black', hex: '#000000' },
   { name: 'Steel', hex: '#9AA3AB' }, { name: 'Sand', hex: '#D8C59A' }, { name: 'Clay', hex: '#C8A58C' }, { name: 'Stone', hex: '#D6D2C8' },
 ];
@@ -59,10 +59,10 @@ export const contentsColour = (ink, band) => { const m = mix(ink, band, 0.85); r
 
 export const OTHER = 'other';
 // Spelled as each maker writes its name online (BX-R39)
-export const MAKERS = [['festool', 'Festool', 'Green'], ['milwaukee', 'Milwaukee', 'Red'], ['dewalt', 'DEWALT', 'Steel'], ['bosch', 'Bosch', 'Blue'], ['makita', 'Makita', 'Teal']];
+export const MAKERS = [['festool', 'Festool', 'Green'], ['milwaukee', 'Milwaukee', 'Red'], ['dewalt', 'DEWALT', 'Gold'], ['bosch', 'Bosch', 'Blue'], ['makita', 'Makita', 'Teal']];
 export const startGroups = () => [
   ...MAKERS.map(([id, name, colour]) => ({ id, name, color: hex(colour) })),
-  { id: 'power', name: 'Power tools', color: hex('Forest') }, { id: 'hand', name: 'Hand tools', color: hex('Black') },
+  { id: 'power', name: 'Power tools', color: hex('Green') }, { id: 'hand', name: 'Hand tools', color: hex('Black') },
   { id: 'consumable', name: 'Consumables', color: hex('Sand') }, { id: 'kit', name: 'Kits', color: hex('Charcoal') },
   { id: OTHER, name: 'Other', color: hex('Stone') },
 ];

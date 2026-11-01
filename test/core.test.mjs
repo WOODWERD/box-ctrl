@@ -44,7 +44,7 @@ test('BX-A09 file names use the local date', () => {
 });
 
 test('BX-A10 palette contrast', () => {
-  const want = { Green: ['#000000', 8.2], Red: ['#FFFFFF', 5.2], Gold: ['#000000', 10.3], Blue: ['#000000', 6.2], Teal: ['#000000', 5.5], Forest: ['#FFFFFF', 6.5], Purple: ['#FFFFFF', 6.1], Charcoal: ['#FFFFFF', 13.8], Black: ['#FFFFFF', 21], Steel: ['#000000', 8.2], Sand: ['#000000', 12.4], Clay: ['#000000', 9.2], Stone: ['#000000', 13.9] };
+  const want = { Green: ['#000000', 8.2], Red: ['#FFFFFF', 5.2], Gold: ['#000000', 12.5], Blue: ['#000000', 6.2], Teal: ['#000000', 5.5], Forest: ['#FFFFFF', 6.5], Purple: ['#FFFFFF', 6.1], Charcoal: ['#FFFFFF', 13.8], Black: ['#FFFFFF', 21], Steel: ['#000000', 8.2], Sand: ['#000000', 12.4], Clay: ['#000000', 9.2], Stone: ['#000000', 13.9] };
   c.PALETTE.forEach((p) => {
     const t = c.autoText(p.hex); assert.equal(t, want[p.name][0], p.name);
     near(c.contrast(p.hex, t), want[p.name][1], 0.06);
@@ -255,7 +255,11 @@ test('BX-A84 the independence notice follows the printer notice', () => {
     assert.doesNotMatch(note, /<button/);
   }
 });
-test('BX-A85 DEWALT starts in Steel', () => assert.equal(c.startGroups().find((g) => g.name === 'DEWALT').color, c.PALETTE.find((p) => p.name === 'Steel').hex));
+test('BX-A85 groups start in the bright colours', () => {
+  const colour = (n) => c.startGroups().find((g) => g.name === n).color, named = (n) => c.PALETTE.find((p) => p.name === n).hex;
+  assert.deepEqual(['Festool', 'Power tools', 'Milwaukee', 'DEWALT'].map(colour), ['Green', 'Green', 'Red', 'Gold'].map(named));
+  assert.equal(colour('Festool'), '#6CB33F');
+});
 test('BX-A86 untested sizes say so and give their dimensions', () => {
   const u = c.PROFILES.filter((p) => p.untested);
   assert.deepEqual(u.map((p) => p.sticker), [[97, 19], [101.5, 18], [117, 18], [150, 18]]);
