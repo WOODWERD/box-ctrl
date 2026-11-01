@@ -23,4 +23,4 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 The WOODWERD / DESIGN mark, in the footer and in `site/woodwerd-sample-logo.png`, is a mark of WOODWERD LLC. The MIT licence on this code doesn't grant rights to use it. It is included only as the footer mark and the tutorial's sample.
 
-Festool, Systainer, Milwaukee, DEWALT, Bosch, Makita, Liene, PixCut and other product names are trademarks of their owners. Box Ctrl is independent of all of them.
+Festool, Systainer, Milwaukee, PACKOUT, DEWALT, TSTAK, Bosch, Makita, Liene, PixCut and other product names are trademarks of their owners. Box Ctrl is independent of all of them.

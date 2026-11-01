@@ -1,6 +1,6 @@
 // Offline copy of the app. Online always gets the newest files; the saved copy is only the fallback (BX-E12).
 // All WOODWERD tools share one web address, so this clears only Box Ctrl's own old copies.
-const VERSION = 'box-ctrl-x0.0.6';
+const VERSION = 'box-ctrl-x0.0.7';
 const FILES = ['./', 'index.html', 'guide.html', 'tokens.css', 'styles.css', 'chrome.js', 'core.js', 'icons.js', 'catalog.js', 'app.js', 'manifest.webmanifest',
   'box-ctrl-template.xlsx', 'woodwerd-sample-logo.png', 'icon-192.png', 'icon-512.png', 'fonts/Inter-Regular.woff2', 'fonts/Inter-Medium.woff2', 'fonts/Inter-SemiBold.woff2',
   'fonts/Inter-Bold.woff2', 'fonts/jetbrains-mono-latin-400-normal.woff2', 'fonts/jetbrains-mono-latin-500-normal.woff2'];

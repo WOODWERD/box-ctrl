@@ -256,6 +256,18 @@ test('BX-A84 the independence notice follows the printer notice', () => {
   }
 });
 test('BX-A85 DEWALT starts in Steel', () => assert.equal(c.startGroups().find((g) => g.name === 'DEWALT').color, c.PALETTE.find((p) => p.name === 'Steel').hex));
+test('BX-A86 untested sizes say so and give their dimensions', () => {
+  const u = c.PROFILES.filter((p) => p.untested);
+  assert.deepEqual(u.map((p) => p.sticker), [[97, 19], [101.5, 18], [117, 18], [150, 18]]);
+  for (const p of u) { assert.equal(p.status, 'Untested'); assert.ok(p.fits.includes(`${p.sticker[0]} × ${p.sticker[1]}`), p.id); assert.deepEqual(p.card, p.sticker); assert.ok(p.fits.startsWith('Fits ')); }
+  assert.ok(u[0].name.includes('TSTAK') && u[1].name.includes('PACKOUT'));
+});
+test('BX-A88 untested sizes print as Strips within the custom limits', () => {
+  for (const p of c.PROFILES.filter((x) => x.untested)) {
+    const [W, H] = p.sticker, l = c.layout(box(), W, H, 1.5, () => 0.6, true, '');
+    assert.equal(l.strip, true, p.id); assert.ok(W <= c.CUSTOM.W.max && H >= c.CUSTOM.H.min, p.id); assert.ok(c.lieneCapacity(W, H, { B: 1.5, G: 1.9 }).n >= 1, p.id);
+  }
+});
 test('BX-A82 what you need covers both routes', () => {
   const need = page('guide.html').match(/<section id="need">.*?<\/section>/s)[0];
   for (const t of ['Liene PixCut S1', 'office printer', 'Save as PDF', "haven't been tested"]) assert.ok(need.includes(t), t);

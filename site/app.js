@@ -608,8 +608,9 @@ function refresh(keepNote) {
     if (S.logo.origW < 160 * s) a1.append(strip('warn', 'Logo may print soft', `This logo is ${S.logo.origW} px wide. Sharp print needs about ${Math.round(319 * s)} px.`));
     if (S.logo.white) a1.append(strip('warn', 'Logo is nearly white', "It will vanish on the white footer. Use a darker version."));
   }
-  state('a1State', inputBad.length ? `${inputBad.length} field${inputBad.length === 1 ? '' : 's'} to fix` : S.pending ? 'Waiting on you' : S.logoNote ? 'Logo not added' : size.fits, inputBad.length || S.logoNote ? 'bad' : S.pending || notes.dropped.length ? 'warn' : 'ok');
+  state('a1State', inputBad.length ? `${inputBad.length} field${inputBad.length === 1 ? '' : 's'} to fix` : S.pending ? 'Waiting on you' : S.logoNote ? 'Logo not added' : size.untested ? 'Untested size' : size.fits, inputBad.length || S.logoNote ? 'bad' : S.pending || notes.dropped.length || size.untested ? 'warn' : 'ok');
   $('customFields').hidden = S.profile !== 'custom';
+  $('untestedNote').hidden = !size.untested;
   $('profile').value = S.profile;
   document.querySelectorAll('#markSeg button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.mark === S.markTab)));
   document.querySelectorAll('#frameSeg button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.frame === S.textMark.frame)));
@@ -702,7 +703,11 @@ function syncInputs() {
 // ---------- wiring ----------
 c.PROFILES.forEach((p) => { const o = el('option', '', `${p.fits} · ${p.status}`); o.value = p.id; $('profile').append(o); });
 { const o = el('option', '', 'Custom size'); o.value = 'custom'; $('profile').append(o); }
-$('profile').onchange = () => { S.profile = $('profile').value; if (S.profile !== 'custom') { bad.Width = ''; bad.Height = ''; } changed(); };
+$('profile').onchange = () => {
+  const was = c.profileSize(S), next = $('profile').value;
+  if (next === 'custom' && was.untested) { [S.custom.W, S.custom.H] = was.sticker; $('customW').value = S.custom.W; $('customH').value = S.custom.H; }
+  S.profile = next; if (S.profile !== 'custom') { bad.Width = ''; bad.Height = ''; } changed();
+};
 
 const numberField = (id, range, apply) => {
   const f = $(id);

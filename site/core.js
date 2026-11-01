@@ -16,6 +16,8 @@ export const LIMITS = { id: 12, name: 20, kind: 28, c: 40, owner: 32, prefix: 8,
 export const PROFILES = [
   { id: 'sys-standard', name: 'Systainer standard card', fits: 'Fits Systainer standard card', sticker: [84, 54], card: [85.72, 54.03], status: 'Sticker measured, card published' },
   { id: 'sys-s', name: 'Systainer³ S card', fits: 'Fits Systainer³ S card', sticker: [54, 35], card: [54, 35], status: 'Published, not test printed' },
+  ...[['tstak', 'DEWALT TSTAK plate', 97, 19], ['packout-s', 'Milwaukee PACKOUT handle, short', 101.5, 18], ['packout-m', 'Milwaukee PACKOUT handle, medium', 117, 18], ['packout-l', 'Milwaukee PACKOUT handle, long', 150, 18]]
+    .map(([id, name, w, h]) => ({ id, name, fits: `Fits ${name}, ${w} × ${h}`, sticker: [w, h], card: [w, h], status: 'Untested', untested: true })),
 ];
 export const CUSTOM = { W: { min: 30, max: 166, name: 'Width' }, H: { min: 12, max: 86, name: 'Height' } };
 export const INPUTS = { B: { min: 0, max: 3, name: 'Cut border' }, G: { min: 1.5, max: 12, name: 'Space between cuts' } };
@@ -23,7 +25,7 @@ export const DEFAULTS = { B: 1.5, G: 1.9 };
 
 export function profileSize(s) {
   const p = PROFILES.find((x) => x.id === s.profile);
-  if (p) return { sticker: p.sticker, card: p.card, fits: p.fits, status: p.status };
+  if (p) return { sticker: p.sticker, card: p.card, fits: p.fits, status: p.status, untested: !!p.untested };
   const v = [s.custom.W, s.custom.H];
   return { sticker: v, card: v, fits: 'Custom size', status: 'Custom' };
 }
