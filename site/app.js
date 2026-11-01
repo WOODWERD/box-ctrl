@@ -60,7 +60,7 @@ function restore() {
   } catch { S.stored = false; }
 }
 const groupOf = (id) => S.groups.find((g) => g.id === id) || S.groups.find((g) => g.id === c.OTHER);
-function changed() { S.examples = false; S.fileNote = ''; save(); refresh(); }
+function changed() { S.examples = false; S.fileNote = ''; S.undoIds = null; save(); refresh(); }
 
 // ---------- text and images ----------
 const mctx = document.createElement('canvas').getContext('2d');
@@ -610,6 +610,12 @@ function refresh(keepNote) {
   const A = W - 2 * S.inputs.B, C = H - 2 * S.inputs.B;
   $('readout').innerHTML = [['Sticker size', `${W} × ${H}`], ['Artwork', `${+A.toFixed(2)} × ${+C.toFixed(2)}`], ['Shape', A / C >= 2.2 ? 'Strip' : 'Card'], ['Status', size.status]].map(([a, b]) => `<dt>${a}</dt><dd>${b}</dd>`).join('');
 
+  // Prefix: IDs change only when asked, since labels may be printed (BX-R32)
+  const pn = $('prefixNote'), off = c.offPrefix(S.boxes, S.prefix);
+  pn.textContent = '';
+  if (S.undoIds) pn.append(strip('ok', 'Done', `${S.undoIds.length} IDs changed.`, { label: 'Undo', run: () => { S.boxes.forEach((b, i) => { b.id = S.undoIds[i]; }); S.undoIds = null; buildList(); changed(); } }));
+  else if (off && !S.examples) pn.append(strip('', 'New boxes only', `New boxes will start ${S.prefix}. ${off} box${off === 1 ? ' keeps its' : 'es keep their'} ID. Change them if you haven't printed yet, so labels match.`, { label: `Change all to ${S.prefix}`, run: changeAll }));
+
   // Area 2
   if (!S.stored && !S.tour) a2.append(strip('warn', 'Not saving', "This browser isn't keeping your list. Export it before you close.", { label: 'Export list', run: exportList }));
   if (S.fileNote) a2.append(strip('bad', 'File', S.fileNote));
@@ -647,6 +653,12 @@ function refresh(keepNote) {
   clearTimeout(sheetTimer); sheetTimer = setTimeout(renderSheets, 120);
 }
 
+function changeAll() {
+  const ids = S.boxes.map((b) => b.id), next = c.applyPrefix(S.boxes, S.prefix);
+  S.boxes.forEach((b, i) => { b.id = next[i].id; });
+  buildList(); changed(); S.undoIds = ids; refresh();
+}
+
 function exportList() { download(new Blob([JSON.stringify(c.writeList(listOf()), null, 2)], { type: 'application/json' }), c.listName()); }
 
 function syncInputs() {
@@ -679,7 +691,7 @@ document.querySelectorAll('#routeSeg button').forEach((b) => { b.onclick = () =>
 document.querySelectorAll('#paperSeg button').forEach((b) => { b.onclick = () => { S.paper = b.dataset.paper; save(); refresh(); }; });
 $('textMark').oninput = () => { S.textMark.text = $('textMark').value; changed(); };
 $('owner').oninput = () => { S.owner = $('owner').value; changed(); };
-$('prefix').oninput = () => { S.prefix = $('prefix').value; save(); };
+$('prefix').oninput = () => { S.prefix = $('prefix').value; S.undoIds = null; save(); refresh(); };
 $('chooseLogo').onclick = $('replaceLogo').onclick = () => $('logoInput').click();
 $('removeLogo').onclick = () => { S.logo = null; changed(); };
 $('logoInput').onchange = (e) => { openLogo(e.target.files[0]); e.target.value = ''; };

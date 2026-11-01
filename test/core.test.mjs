@@ -166,6 +166,14 @@ test('BX-A36 boxes with no quantity or name make no labels', () => {
 
 test('duplicate IDs are found', () => assert.ok(c.duplicateIds([box(), box()]).has('BOX-001')));
 test('next ID pads to three digits', () => assert.equal(c.nextId([box({ id: 'BOX-009' })], 'BOX-'), 'BOX-010'));
+test('BX-A69 a new prefix leaves IDs alone and counts them', () => {
+  assert.equal(c.offPrefix([box({ id: 'ST-001' }), box({ id: 'ST-200' })], 'SYS-'), 2);
+  assert.equal(c.offPrefix([box({ id: 'SYS-001' })], 'SYS-'), 0);
+});
+test('BX-A70 Change all keeps each number', () => {
+  const r = c.applyPrefix([box({ id: 'ST-001' }), box({ id: 'ST-200' }), box({ id: '' })], 'SYS-');
+  assert.deepEqual(r.map((b) => b.id), ['SYS-001', 'SYS-200', 'SYS-201']);
+});
 test('symbol shortcuts', () => assert.equal(c.fixSymbols('A * B -> C <-> D'), 'A · B → C ↔ D'));
 
 test('custom sizes turn on the sheet', () => {

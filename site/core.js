@@ -109,6 +109,13 @@ export function nextId(boxes, prefix) {
   });
   return `${prefix}${String(top + 1).padStart(3, '0')}`;
 }
+// Swaps the prefix and keeps each number. Boxes with no number take the next free one (BX-R32).
+export function applyPrefix(boxes, prefix) {
+  const out = boxes.map((b) => { const m = String(b.id || '').match(/(\d+)$/); return { ...b, id: m ? `${prefix}${m[1]}` : '' }; });
+  out.forEach((b) => { if (!b.id) b.id = nextId(out, prefix); });
+  return out;
+}
+export const offPrefix = (boxes, prefix) => (prefix ? boxes.filter((b) => !String(b.id || '').toUpperCase().startsWith(prefix.toUpperCase())).length : 0);
 export const blankBox = (id, groupId = OTHER, icon = '') => ({ id, name: '', kind: '', c1: '', c2: '', groupId, icon, qty: 1 });
 export const printable = (b) => String(b.name || '').trim() !== '' && clampQty(b.qty) > 0;
 export function labelList(boxes) {
