@@ -73,6 +73,11 @@ details.alltools[open]>summary::after{content:"▴";color:var(--accent-text)}
 .stack{display:flex;flex-direction:column;gap:13px;min-width:0}
 .strips{display:flex;flex-direction:column;gap:8px}
 .strips:empty{display:none}
+.logohead{display:flex;gap:13px;align-items:center;min-width:0}
+.logohead>div{min-width:0;overflow-wrap:anywhere}
+.logothumb{width:89px;height:55px;flex:none;object-fit:contain;padding:5px;background:var(--print);border:1px solid var(--line);border-radius:8px}
+.panel:focus{outline:none}
+textarea.in{height:auto;padding:5px 8px;line-height:1.5;resize:none;display:block}
 .fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px;align-items:end}
 .f{display:flex;flex-direction:column;gap:5px;min-width:0}
 .f>span{font-size:var(--t-cap);color:var(--soft)}

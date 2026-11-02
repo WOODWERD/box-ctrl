@@ -6,7 +6,7 @@
 @font-face{font-family:"JetBrains Mono";font-weight:400;font-display:swap;src:url(fonts/jetbrains-mono-latin-400-normal.woff2) format("woff2")}
 @font-face{font-family:"JetBrains Mono";font-weight:500;font-display:swap;src:url(fonts/jetbrains-mono-latin-500-normal.woff2) format("woff2")}
 :root{
-  --ground:#F9F7F3;--surface:#FFFFFF;--line:#E2E0DA;--strong:#C9C7C0;--ink:#0C0B09;--soft:#5D6267;
+  --print:#FFFFFF;--ground:#F9F7F3;--surface:#FFFFFF;--line:#E2E0DA;--strong:#C9C7C0;--ink:#0C0B09;--soft:#5D6267;
   --accent:#C4944A;--accent-text:#8A5F22;--accent-tint:#F0E2C8;
   --ok:#2F9E5F;--attention:#FF9F43;--fault:#D0453A;
   --band:#0C0B09;--band-ink:#FFFFFF;--band-soft:#A9A49A;--band-line:#3A3733;--band-bad:#FF8F85;

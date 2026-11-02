@@ -20,7 +20,7 @@
   <div class="brand">
     <h1>Box Ctrl</h1>
     <span class="by">Labels for tool boxes, sized to the box you own</span>
-    <span class="by mono">· x0.0.10</span>
+    <span class="by mono">· x0.0.11</span>
     <span class="tag" id="tourTag" hidden>Tutorial · sample list</span>
   </div>
   <div class="leds" aria-live="polite">
@@ -62,6 +62,7 @@
             <button type="button" data-mark="up">Upload logo</button><button type="button" data-mark="text">Text mark</button><button type="button" data-mark="icon">Icon</button><button type="button" data-mark="none">None</button>
           </div>
         </div>
+        <div class="strips" id="logoSpot" aria-live="polite"></div>
         <div id="dropWrap" class="stack" style="gap:5px">
           <div class="drop" id="drop"><span>Drop your logo here, or</span><button class="key" type="button" id="chooseLogo"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V4M7.500 8.500 12 4l4.500 4.500M4.500 15v3.500a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V15"/></svg>Choose logo file</button></div>
           <p class="small note">PNG, JPEG, WebP or SVG, up to 5 MB. Use a logo you own or have permission to use.</p>
@@ -72,7 +73,7 @@
           <div class="f"><span>Frame</span><div class="segc" role="group" aria-label="Frame" id="frameSeg"><button type="button" data-frame="none">None</button><button type="button" data-frame="rule">Rule</button><button type="button" data-frame="box">Box</button></div></div>
         </div>
         <div class="tools" id="iconMarkRow" hidden><button class="key" type="button" id="chooseMarkIcon">Choose an icon</button></div>
-        <label class="f" id="hlOwner"><span>Owner line · prints bottom left of every label</span><input class="in" id="owner" maxlength="32" placeholder="PROPERTY OF YOUR SHOP"></label>
+        <label class="f" id="hlOwner"><span>Owner line · prints bottom left of every label, up to three lines</span><textarea class="in" id="owner" rows="3" placeholder="PROPERTY OF YOUR SHOP&#10;Phone or address"></textarea></label>
         <div class="fields">
           <label class="f"><span>ID prefix · printed bottom left</span><input class="in m" id="prefix" maxlength="8"></label>
           <label class="f"><span>Start numbering at</span><input class="in m" id="startNo" inputmode="numeric"></label>

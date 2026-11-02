@@ -114,7 +114,7 @@ function drawLabel(ctx, box, ox, oy, k) {
   if (l.kind) text(ctx, l.kind, X(l.tx), Y(l.y2), l.s2 * k, 700, ink, 0.06);
   const cc = c.contentsColour(ink, g.color);
   l.contents.forEach((t) => text(ctx, t.t, X(l.tx), Y(t.y), l.s3 * k, 400, cc));
-  if (l.owner) text(ctx, l.owner, X(l.fx), Y(l.y5), l.s4 * k, 400, '#4A4A4A', 0.08);
+  l.owner.forEach((t) => text(ctx, t.t, X(l.fx), Y(t.y), l.ownSize * k, 400, '#4A4A4A', 0.08));
   if (box.id) text(ctx, box.id, X(l.fx), Y(l.y6), l.s4 * k, 700, '#4A4A4A', 0.08);
   drawMark(ctx, m, l, ox, oy, k);
   return l;
@@ -387,7 +387,7 @@ function listPanel(p) {
     const logo = c.newLogo(mark(), r.mark) ? r.mark : null, m = logo ? { kind: 'none' } : r.mark;
     Object.assign(S, { profile: r.profile, custom: r.custom, owner: r.owner, prefix: r.prefix, startNo: r.startNo, extraCols: r.extraCols, groups: r.groups, inputs: r.inputs, route: r.route, paper: r.paper, boxes: r.boxes.length ? r.boxes : [c.blankBox(c.nextId([], r.prefix))], sel: 0, examples: false, panel: null, plan: null });
     if (!logo) applyMark(m); else { S.markTab = 'up'; S.logo = null; S.pending = { ...logo, white: false }; }
-    syncInputs(); renderPanel(); buildList(); changed();
+    syncInputs(); renderPanel(); buildList(); changed(); showLogoSpot();
   }), button('key', 'Cancel', closePanel));
   p.append(el('h3', '', `Replace your list with ${n} box${n === 1 ? '' : 'es'}?`), el('p', 'small', `From ${r.file}. The ${S.boxes.length} box${S.boxes.length === 1 ? '' : 'es'} here now will be gone unless you export them first.`), tools);
 }
@@ -435,7 +435,14 @@ async function openFile(file) {
 }
 
 // A logo is checked, then waits on the acknowledgement. Nothing is stored or drawn before that (BX-R110).
-function logoError(msg) { S.logoNote = msg; S.pending = null; refresh(); }
+function logoError(msg) { S.logoNote = msg; S.pending = null; refresh(); showLogoSpot(); }
+// Logo messages sit where the file was chosen, so show that spot if it's off screen (BX-R114)
+function showLogoSpot() {
+  const first = $('logoSpot').firstElementChild; if (!first) return;
+  first.scrollIntoView({ block: 'nearest' });
+  if (S.pending) first.focus({ preventScroll: true });
+}
+const backToLogo = () => (S.logo ? $('replaceLogo') : $('chooseLogo')).focus({ preventScroll: true });
 function openLogo(file) {
   S.logoNote = '';
   if (!file) return;
@@ -453,7 +460,7 @@ function openLogo(file) {
       const d = ctx.getImageData(0, 0, cv.width, cv.height).data; let seen = 0, light = 0;
       for (let i = 0; i < d.length; i += 4) if (d[i + 3] > 40) { seen++; if (d[i] > 235 && d[i + 1] > 235 && d[i + 2] > 235) light++; }
       S.pending = { kind: 'img', src: cv.toDataURL('image/png'), file: file.name, w: cv.width, h: cv.height, origW: w, white: seen > 0 && light / seen > 0.95 };
-      S.logoNote = ''; S.panel === 'icons' && closePanel(); refresh();
+      S.logoNote = ''; S.panel === 'icons' && closePanel(); refresh(); showLogoSpot();
     } catch { logoError(`${file.name} wouldn't draw. Try a PNG.`); }
     URL.revokeObjectURL(url);
   };
@@ -464,8 +471,13 @@ function logoPanel(host) {
   const f = S.pending, d = el('div', 'panel');
   d.setAttribute('role', 'alertdialog'); d.setAttribute('aria-label', 'Before you add this logo');
   const tools = el('div', 'tools');
-  tools.append(button('key go', 'I own it or have permission', () => { S.logo = S.pending; S.markTab = 'up'; S.pending = null; changed(); }), button('key', 'Cancel', () => { S.pending = null; refresh(); }));
-  d.append(el('h3', '', 'Before you add this logo'), el('p', 'small mono', `${f.file} · ${f.w} × ${f.h} px`),
+  tools.append(button('key go', 'I own it or have permission', () => { S.logo = S.pending; S.markTab = 'up'; S.pending = null; changed(); backToLogo(); }), button('key', 'Cancel', () => { S.pending = null; refresh(); backToLogo(); }));
+  d.tabIndex = -1;
+  const head = el('div', 'logohead'), name = el('div'), thumb = el('img', 'logothumb');
+  thumb.src = f.src; thumb.alt = '';
+  name.append(el('h3', '', 'Before you add this logo'), el('p', 'small mono', `${f.file} · ${f.w} × ${f.h} px`));
+  head.append(thumb, name);
+  d.append(head,
     el('p', 'note', "Only add a logo you own or have permission to use. You're responsible for how you use it, including any trademark or copyright in it. Box Ctrl doesn't check logos, doesn't keep a copy, and takes no responsibility for your use of one."), tools);
   d.querySelector('.note').style.fontSize = 'var(--t-cap)';
   host.append(d);
@@ -621,12 +633,13 @@ function refresh(keepNote) {
   a1.textContent = ''; a2.textContent = ''; a3.textContent = '';
   if (S.examples && !S.tourSeen && !S.tour) a1.append(strip('', 'New here?', "The tutorial builds a sample set of labels with you, step by step. It won't touch your list.", { label: 'Start tutorial', run: startTour }, { label: 'Not now', run: () => { dismissOffer(); refresh(); } }));
   inputBad.forEach((k) => a1.append(strip('bad', k, bad[k])));
-  if (S.logoNote) a1.append(strip('bad', 'Logo not added', S.logoNote));
-  if (S.pending) logoPanel(a1);
+  const spot = $('logoSpot'); spot.textContent = '';
+  if (S.logoNote) spot.append(strip('bad', 'Logo not added', S.logoNote));
+  if (S.pending) logoPanel(spot);
   if (notes.dropped.length) a1.append(strip('warn', 'Left off at this size', `A ${W} × ${H} label has no room for ${notes.dropped.join(', ')}, so ${notes.dropped.length === 1 ? 'it doesn\'t' : 'they don\'t'} print. The name, kind, mark and ID stay.`));
   if (S.markTab === 'up' && S.logo && !S.logo.sample) {
-    if (S.logo.origW < 160 * s) a1.append(strip('warn', 'Logo may print soft', `This logo is ${S.logo.origW} px wide. Sharp print needs about ${Math.round(319 * s)} px.`));
-    if (S.logo.white) a1.append(strip('warn', 'Logo is nearly white', "It will vanish on the white footer. Use a darker version."));
+    if (S.logo.origW < 160 * s) spot.append(strip('warn', 'Logo may print soft', `This logo is ${S.logo.origW} px wide. Sharp print needs about ${Math.round(319 * s)} px.`));
+    if (S.logo.white) spot.append(strip('warn', 'Logo is nearly white', "It will vanish on the white footer. Use a darker version."));
   }
   state('a1State', inputBad.length ? `${inputBad.length} field${inputBad.length === 1 ? '' : 's'} to fix` : S.pending ? 'Waiting on you' : S.logoNote ? 'Logo not added' : size.untested ? 'Untested size' : size.fits, inputBad.length || S.logoNote ? 'bad' : S.pending || notes.dropped.length || size.untested ? 'warn' : 'ok');
   $('customFields').hidden = S.profile !== 'custom';
@@ -634,8 +647,8 @@ function refresh(keepNote) {
   $('profile').value = S.profile;
   document.querySelectorAll('#markSeg button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.mark === S.markTab)));
   document.querySelectorAll('#frameSeg button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.frame === S.textMark.frame)));
-  $('dropWrap').hidden = S.markTab !== 'up' || !!S.logo;
-  $('fileRow').hidden = S.markTab !== 'up' || !S.logo;
+  $('dropWrap').hidden = S.markTab !== 'up' || !!S.logo || !!S.pending;
+  $('fileRow').hidden = S.markTab !== 'up' || !S.logo || !!S.pending;
   if (S.logo) $('fileName').textContent = S.logo.sample ? 'woodwerd-sample-logo.png · sample' : `${S.logo.file} · ${S.logo.w} × ${S.logo.h} px`;
   $('replaceLogo').disabled = $('removeLogo').disabled = !!S.tour;
   $('textFields').hidden = S.markTab !== 'text';
@@ -746,7 +759,7 @@ document.querySelectorAll('#frameSeg button').forEach((b) => { b.onclick = () =>
 document.querySelectorAll('#routeSeg button').forEach((b) => { b.onclick = () => { S.route = b.dataset.route; save(); refresh(); }; });
 document.querySelectorAll('#paperSeg button').forEach((b) => { b.onclick = () => { S.paper = b.dataset.paper; save(); refresh(); }; });
 $('textMark').oninput = () => { S.textMark.text = $('textMark').value; changed(); };
-$('owner').oninput = () => { S.owner = $('owner').value; changed(); };
+$('owner').oninput = () => { const v = c.clipOwner($('owner').value); if (v !== $('owner').value) $('owner').value = v; S.owner = v; changed(); };
 $('prefix').oninput = () => { S.prefix = $('prefix').value; S.undoIds = null; save(); refresh(); };
 $('startNo').oninput = () => {
   const n = c.clampStart($('startNo').value); $('startNo').classList.toggle('bad', !n);

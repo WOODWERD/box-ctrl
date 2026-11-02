@@ -10,6 +10,7 @@ export const MAX_BOXES = 500;
 export const MAX_FILE = 5 * 1024 * 1024;
 export const NAME_FLOOR_PT = 9, TEXT_FLOOR_PT = 4.5; // provisional (BX-R22, Q7)
 export const LOGO_EDGE = 640; // stored size (BX-R42)
+export const OWNER_LINES = 3;
 export const LIMITS = { id: 12, name: 20, kind: 28, c: 40, owner: 32, prefix: 8, group: 16, textMark: 16 };
 
 // ---------- profiles (BX-R01 to BX-R03) ----------
@@ -153,6 +154,10 @@ export const fixSymbols = (t) => SHORT.reduce((s, [re, ch]) => s.replace(re, ch)
 
 // ---------- label layout, all mm (BX-R10 to BX-R22) ----------
 // measure(text, weight) gives width in ems, using the real font.
+// Up to three lines of up to 32 characters. Keeps blank lines, so Return works while typing (BX-R49)
+export const clipOwner = (v) => String(v ?? '').split(/\r?\n/).slice(0, OWNER_LINES).map((t) => t.slice(0, LIMITS.owner)).join('\n');
+export const ownerLines = (v) => clipOwner(v).split('\n').map((t) => t.trim()).filter(Boolean);
+
 export function layout(box, stickerW, stickerH, B, measure, hasMark = false, owner = '') {
   const A = stickerW - 2 * B, C = stickerH - 2 * B, s = Math.min(1, C / 51), inset = Math.max(1.5, 4 * s), strip = A / C >= 2.2;
   const x0 = B, y0 = B, name = String(box.name || '').toUpperCase(), kind = String(box.kind || '').toUpperCase();
@@ -160,7 +165,7 @@ export function layout(box, stickerW, stickerH, B, measure, hasMark = false, own
   const fit = (t, w, max, room, ls = 0) => Math.min(max, room / (widthAt(t, w, ls) || 1));
   const iconKey = box.icon && ICONS[box.icon] ? box.icon : '';
   const out = { A, C, s, inset, strip, x0, y0, name, kind, contents: [], dropped: [], small: [] };
-  const own = String(owner || '').toUpperCase();
+  const own = ownerLines(owner).map((t) => t.toUpperCase());
 
   if (!strip) {
     const bh = C / PHI, fh = C - bh, iconCol = A / (PHI * PHI), room = (iconKey ? A - iconCol : A) - 1.5 * inset;
@@ -175,11 +180,13 @@ export function layout(box, stickerW, stickerH, B, measure, hasMark = false, own
     const top = y0 + (bh - block()) / 2, y1 = top + s1 * cap, y2 = y1 + (kind ? gap + s2 * cap : 0);
     let y = y2 + gap * 0.8 + s3 * cap;
     [c1, c2].filter(Boolean).forEach((t) => { out.contents.push({ t, y }); y += lead; });
-    const ib = 22.7 * s, s4 = 5.5 * PT * s, mid = y0 + bh + fh / 2, slotH = fh / PHI, slotW = 27 * s;
+    const ib = 22.7 * s, s4 = 5.5 * PT * s, mid = y0 + bh + fh / 2, slotH = fh / PHI, slotW = 27 * s, pitch = s4 * 1.5;
+    const ownRoom = A - 2 * inset - (hasMark ? slotW + inset / 2 : 0), ownSize = Math.min(s4, ...own.map((t) => fit(t, 400, s4, ownRoom, 0.08)));
+    const ownTop = mid + s4 * 0.5 - own.length * pitch / 2;
     Object.assign(out, {
       band: { x: x0, y: y0, w: A, h: bh }, foot: { x: x0, y: y0 + bh, w: A, h: fh }, tx: x0 + inset, s1, s2, s3, y1, y2,
       icon: iconKey ? { key: iconKey, x: x0 + A - iconCol + (iconCol - ib) / 2, y: y0 + (bh - ib) / 2, size: ib } : null,
-      s4, fx: x0 + inset, y5: own ? mid - s4 * 0.25 : 0, y6: own ? mid + s4 * 1.25 : mid + s4 * 0.36, owner: own,
+      s4, fx: x0 + inset, ownSize, owner: own.map((t, i) => ({ t, y: ownTop + i * pitch })), y6: own.length ? ownTop + own.length * pitch : mid + s4 * 0.36,
       slot: { x: x0 + A - inset - slotW, y: y0 + bh + (fh - slotH) / 2, w: slotW, h: slotH },
     });
   } else {
@@ -188,12 +195,12 @@ export function layout(box, stickerW, stickerH, B, measure, hasMark = false, own
     const blk = s1 * cap + (kind ? gap + s2 * cap : 0), top = y0 + (C - blk) / 2, y1 = top + s1 * cap, y2 = y1 + gap + s2 * cap;
     const s4 = Math.max(1.6, C * 0.1), fx = x0 + bw + inset, slotH = C - 2 * inset - s4 * 1.6;
     if (box.c1 || box.c2) out.dropped.push('contents');
-    if (own) out.dropped.push('owner line');
+    if (own.length) out.dropped.push('owner line');
     if (iconKey && !showIcon) out.dropped.push('icon');
     Object.assign(out, {
       band: { x: x0, y: y0, w: bw, h: C }, foot: { x: x0 + bw, y: y0, w: A - bw, h: C }, tx: x0 + inset, s1, s2, s3: 0, y1, y2,
       icon: showIcon ? { key: iconKey, x: x0 + bw - inset - ib, y: y0 + inset, size: ib } : null,
-      s4, fx, y5: 0, y6: y0 + C - inset, owner: '', slot: { x: fx, y: y0 + inset, w: A - bw - 2 * inset, h: slotH },
+      s4, fx, y6: y0 + C - inset, owner: [], slot: { x: fx, y: y0 + inset, w: A - bw - 2 * inset, h: slotH },
     });
   }
   if (name && out.s1 / PT < Math.min(NAME_FLOOR_PT, 19 * s)) out.small.push('name');
@@ -379,7 +386,7 @@ export function readList(o) {
     profile: PROFILES.some((p) => p.id === o.profile) || o.profile === 'custom' ? o.profile : PROFILES[0].id,
     custom: { W: num(o.custom?.W, CUSTOM.W, 120), H: num(o.custom?.H, CUSTOM.H, 25) },
     extraCols: Array.isArray(o.extraCols) ? o.extraCols.map((h) => text(h, 200)).filter(Boolean).slice(0, 200) : [],
-    mark: readMark(o.mark), owner: text(o.owner, LIMITS.owner), prefix: text(o.prefix, LIMITS.prefix) || 'BOX-', startNo: clampStart(o.startNo) || 1, groups,
+    mark: readMark(o.mark), owner: clipOwner(o.owner), prefix: text(o.prefix, LIMITS.prefix) || 'BOX-', startNo: clampStart(o.startNo) || 1, groups,
     inputs: { B: num(i.B, INPUTS.B, DEFAULTS.B), G: num(i.G, INPUTS.G, DEFAULTS.G) },
     route: o.route === 'office' ? 'office' : 'liene', paper: o.paper === 'a4' ? 'a4' : 'letter',
     boxes: o.boxes.map((b) => ({

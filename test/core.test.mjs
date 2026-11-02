@@ -334,6 +334,39 @@ test('the sample is three boxes on one sheet', () => {
   assert.equal(s.boxes.length, 3); assert.equal(s.owner, 'Property of WOODWERD');
 });
 
+test('BX-A97 owner lines stack above the ID inside the footer', () => {
+  for (const [W, H] of [[84, 54], [54, 35]]) {
+    const one = c.layout(box(), W, H, 1.5, em, true, 'A'), three = c.layout(box(), W, H, 1.5, em, true, 'A\nB\nC'), foot = three.foot;
+    assert.deepEqual(three.owner.map((l) => l.t), ['A', 'B', 'C']);
+    assert.ok(three.owner[0].y - three.s4 * 0.73 > foot.y); assert.ok(three.y6 < foot.y + foot.h);
+    assert.ok(three.owner[1].y > three.owner[0].y && three.y6 > three.owner[2].y);
+    assert.equal(one.owner.length, 1);
+  }
+  const l = c.layout(box(), 84, 54, 1.5, em, true, 'A'), mid = l.foot.y + l.foot.h / 2;
+  near(l.owner[0].y, mid - l.s4 * 0.25); near(l.y6, mid + l.s4 * 1.25);
+});
+test('BX-A98 only three lines of 32 characters are kept', () => {
+  assert.equal(c.clipOwner('a\nb\nc\nd'), 'a\nb\nc');
+  assert.equal(c.clipOwner('x'.repeat(40)), 'x'.repeat(32));
+  assert.equal(c.clipOwner('a\n'), 'a\n'); // Return works while typing
+  assert.deepEqual(c.ownerLines(' a \n\n b '), ['a', 'b']);
+  assert.equal(c.readList({ version: 1, owner: 'a\nb\nc\nd', boxes: [box()] }).owner, 'a\nb\nc');
+});
+test('BX-A99 a long owner line stops short of the mark', () => {
+  const wide = (t) => t.length * 0.7, l = c.layout(box(), 84, 54, 1.5, wide, true, 'x'.repeat(32));
+  assert.ok(l.ownSize < l.s4);
+  assert.ok(l.fx + (wide('X'.repeat(32)) + 0.08 * 32) * l.ownSize <= l.slot.x);
+  near(c.layout(box(), 84, 54, 1.5, em, true, 'SHORT').ownSize, c.layout(box(), 84, 54, 1.5, em).s4);
+});
+test('BX-A100 owner lines survive export and reopening', () => {
+  const s = { ...S({ boxes: [box()] }), custom: { W: 120, H: 25 }, mark: { kind: 'none' }, owner: 'Property of WOODWERD LLC\n512-555-0100', inputs: inputs(), route: 'liene', paper: 'letter' };
+  assert.equal(c.readList(JSON.parse(JSON.stringify(c.writeList(s)))).owner, s.owner);
+});
+test('BX-A97 strip labels still leave the owner line off', () => {
+  const l = c.layout(box(), 120, 25, 1.5, em, true, 'A\nB');
+  assert.deepEqual(l.owner, []); assert.ok(l.dropped.includes('owner line'));
+});
+
 test('the repo holds no brand colour names', () => {
   const src = readFileSync(new URL('../site/core.js', import.meta.url), 'utf8');
   assert.doesNotMatch(src, /name: '(Festool|Milwaukee|DeWalt)/i);
