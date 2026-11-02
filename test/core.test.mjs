@@ -2,7 +2,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, existsSync } from 'node:fs';
-import { homedir } from 'node:os';
 import * as c from '../site/core.js';
 import { ICONS, searchIcons } from '../site/icons.js';
 import { CATALOG, BRANDS, searchCatalog } from '../site/catalog.js';
@@ -78,7 +77,7 @@ test('BX-A14 removing a group moves its boxes to Other', () => {
 });
 
 const CSV = process.env.BOX_CTRL_CSV || '';
-test('BX-A15 Drew\'s list imports whole', { skip: !existsSync(CSV) && 'private file not here' }, () => {
+test('BX-A15 a full list imports whole', { skip: !existsSync(CSV) && 'set BOX_CTRL_CSV to run' }, () => {
   const read = c.readTable(c.parseCsv(readFileSync(CSV, 'utf8')));
   assert.equal(read.skipped.length, 0, read.skipped.join('; '));
   assert.equal(read.rows.length, 66); assert.equal(read.iconNotes.length, 0, read.iconNotes.join('; '));
@@ -367,11 +366,11 @@ test('BX-A97 strip labels still leave the owner line off', () => {
   assert.deepEqual(l.owner, []); assert.ok(l.dropped.includes('owner line'));
 });
 
-test('BX-A101 both pages link the main GitHub and never the private repo', () => {
+test('BX-A101 both pages link the main GitHub and the source', () => {
   for (const page of ['index.html', 'guide.html']) {
     const html = readFileSync(new URL(`../site/${page}`, import.meta.url), 'utf8');
     assert.equal(html.match(/class="ghlink" href="https:\/\/github\.com\/WOODWERD"/g).length, 2);
-    assert.doesNotMatch(html, /github\.com\/WOODWERD\/box-ctrl/);
+    assert.match(html, /href="https:\/\/github\.com\/WOODWERD\/box-ctrl">Source and issues on GitHub/);
   }
 });
 test('BX-A102 All tools matches the list in Cable Ctrl', () => {
