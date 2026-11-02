@@ -257,8 +257,21 @@ test('BX-A84 the independence notice follows the printer notice', () => {
 });
 test('BX-A85 groups start in the bright colours', () => {
   const colour = (n) => c.startGroups().find((g) => g.name === n).color, named = (n) => c.PALETTE.find((p) => p.name === n).hex;
-  assert.deepEqual(['Festool', 'Power tools', 'Milwaukee', 'DEWALT'].map(colour), ['Green', 'Green', 'Red', 'Gold'].map(named));
+  assert.deepEqual(['Festool', 'Power tools', 'Milwaukee', 'DEWALT'].map(colour), ['Green', 'Steel', 'Red', 'Gold'].map(named));
   assert.equal(colour('Festool'), '#6CB33F');
+});
+test('two-colour makers stay readable, and a picked tool keeps the pair', () => {
+  const g = c.startGroups(), pairs = g.filter((x) => x.text);
+  assert.deepEqual(pairs.map((x) => x.name), ['Festool', 'Wera']);
+  for (const p of pairs) assert.ok(c.contrast(p.color, p.text) >= 4.5, `${p.name} ${c.contrast(p.color, p.text)}`);
+  const rest = g.filter((x) => x.name !== 'Festool'), id = c.groupForEntry(rest, { brand: 'Festool', tier: 'power' });
+  assert.equal(rest.find((x) => x.id === id).text, '#002B49');
+});
+test('Wera and Knipex start as groups, with readable bands', () => {
+  const g = c.startGroups(), wera = g.find((x) => x.name === 'Wera');
+  assert.deepEqual([wera.color, c.bandText(wera)], [c.PALETTE.find((p) => p.name === 'Black').hex, '#00A884']);
+  assert.ok(c.contrast(wera.color, wera.text) >= 4.5); assert.equal(new Set(g.map((x) => x.id)).size, g.length); const k = g.find((x) => x.name === 'Knipex'); assert.deepEqual([k.color, c.bandText(k)], ['#E2001A', '#FFFFFF']); assert.ok(c.contrast(k.color, '#FFFFFF') >= 4.5);
+  assert.equal(g[g.length - 1].name, 'Other');
 });
 test('BX-A86 untested sizes say so and give their dimensions', () => {
   const u = c.PROFILES.filter((p) => p.untested);

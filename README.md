@@ -43,4 +43,4 @@ Then open <http://localhost:8139>.
 
 © 2026 WOODWERD LLC, [MIT licence](LICENSE). See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for the fonts and icons it distributes. The MIT licence doesn't cover the WOODWERD mark.
 
-Box Ctrl is an independent project. It is not affiliated with or endorsed by any toolmaker or printer maker. Festool, Systainer, Milwaukee, PACKOUT, DEWALT, TSTAK, Bosch, Makita, Liene and PixCut are trademarks of their owners. Product names in the standard tools list belong to their owners and identify the tools only.
+Box Ctrl is an independent project. It is not affiliated with or endorsed by any toolmaker or printer maker. Festool, Systainer, Milwaukee, PACKOUT, DEWALT, TSTAK, Bosch, Makita, Wera, Knipex, Liene and PixCut are trademarks of their owners. Product names in the standard tools list belong to their owners and identify the tools only.

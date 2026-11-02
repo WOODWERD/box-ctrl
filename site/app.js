@@ -278,8 +278,15 @@ function groupsPanel(p) {
       sws.append(b);
     });
     const custom = !c.PALETTE.some((k) => k.hex.toUpperCase() === g.color.toUpperCase());
-    const lab = el('label', `swc${custom ? ' on' : ''}`); lab.title = 'Custom colour'; lab.innerHTML = PLUS_ICON;
+    const lab = el('label', `swc${custom ? ' on' : ''}`), chip = el('span'); lab.title = 'Custom colour'; lab.innerHTML = PLUS_ICON;
     const inp = el('input'); inp.type = 'color'; inp.value = g.color; inp.setAttribute('aria-label', `Custom colour for ${g.name}`);
+    const showCustom = () => { lab.querySelector('svg')?.remove(); lab.classList.add('on'); chip.style.background = g.color; if (!chip.isConnected) lab.prepend(chip); };
+    if (custom) showCustom();
+    // input fires while the picker is open, so the list and label follow it. Rebuilding the panel here would close the picker.
+    inp.oninput = () => {
+      g.color = inp.value.toUpperCase(); sws.querySelectorAll('.swb').forEach((b) => b.setAttribute('aria-pressed', 'false')); showCustom();
+      buildList(); changed();
+    };
     inp.onchange = () => { g.color = inp.value.toUpperCase(); renderPanel(); buildList(); changed(); };
     lab.append(inp); sws.append(lab);
     // Band text is automatic, unless a group sets its own (BX-R23)

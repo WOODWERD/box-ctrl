@@ -59,10 +59,12 @@ export const contentsColour = (ink, band) => { const m = mix(ink, band, 0.85); r
 
 export const OTHER = 'other';
 // Spelled as each maker writes its name online (BX-R39)
-export const MAKERS = [['festool', 'Festool', 'Green'], ['milwaukee', 'Milwaukee', 'Red'], ['dewalt', 'DEWALT', 'Gold'], ['bosch', 'Bosch', 'Blue'], ['makita', 'Makita', 'Teal']];
+export const MAKERS = [['festool', 'Festool', 'Green', '#002B49'], ['milwaukee', 'Milwaukee', 'Red'], ['dewalt', 'DEWALT', 'Gold'], ['bosch', 'Bosch', 'Blue'], ['makita', 'Makita', 'Teal']];
+const HAND_MAKERS = [{ id: 'wera', name: 'Wera', color: hex('Black'), text: '#00A884' }, { id: 'knipex', name: 'Knipex', color: '#E2001A' }];
+const makerGroup = ([id, name, colour, text]) => ({ id, name, color: hex(colour), ...(text ? { text } : {}) });
 export const startGroups = () => [
-  ...MAKERS.map(([id, name, colour]) => ({ id, name, color: hex(colour) })),
-  { id: 'power', name: 'Power tools', color: hex('Green') }, { id: 'hand', name: 'Hand tools', color: hex('Black') },
+  ...MAKERS.map(makerGroup), ...HAND_MAKERS.map((g) => ({ ...g })),
+  { id: 'power', name: 'Power tools', color: hex('Steel') }, { id: 'hand', name: 'Hand tools', color: hex('Black') },
   { id: 'consumable', name: 'Consumables', color: hex('Sand') }, { id: 'kit', name: 'Kits', color: hex('Charcoal') },
   { id: OTHER, name: 'Other', color: hex('Stone') },
 ];
@@ -73,7 +75,7 @@ export function groupForEntry(groups, e) {
   const m = MAKERS.find((x) => x[1] === e.brand);
   const have = groups.find((x) => x.name.toLowerCase() === e.brand.toLowerCase());
   if (have) return have.id;
-  const g = { id: m[0], name: m[1], color: hex(m[2]) }; groups.splice(Math.max(0, groups.length - 1), 0, g);
+  const g = makerGroup(m); groups.splice(Math.max(0, groups.length - 1), 0, g);
   return g.id;
 }
 
