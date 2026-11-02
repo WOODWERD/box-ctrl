@@ -367,6 +367,20 @@ test('BX-A97 strip labels still leave the owner line off', () => {
   assert.deepEqual(l.owner, []); assert.ok(l.dropped.includes('owner line'));
 });
 
+test('BX-A101 both pages link the main GitHub and never the private repo', () => {
+  for (const page of ['index.html', 'guide.html']) {
+    const html = readFileSync(new URL(`../site/${page}`, import.meta.url), 'utf8');
+    assert.equal(html.match(/class="ghlink" href="https:\/\/github\.com\/WOODWERD"/g).length, 2);
+    assert.doesNotMatch(html, /github\.com\/WOODWERD\/box-ctrl/);
+  }
+});
+test('BX-A102 All tools matches the list in Cable Ctrl', () => {
+  const html = readFileSync(new URL('../site/index.html', import.meta.url), 'utf8');
+  const print = html.slice(html.indexOf('<h2>Print'), html.indexOf('</details>'));
+  assert.deepEqual([...print.matchAll(/<b>(?:<a [^>]*>)?([^<]+)/g)].map((m) => m[1]), ['Cable Ctrl', 'File Ctrl', 'Box Ctrl']);
+  assert.match(html, /<b>CtrlClock<\/b> <span class="tag">In progress/);
+});
+
 test('the repo holds no brand colour names', () => {
   const src = readFileSync(new URL('../site/core.js', import.meta.url), 'utf8');
   assert.doesNotMatch(src, /name: '(Festool|Milwaukee|DeWalt)/i);
