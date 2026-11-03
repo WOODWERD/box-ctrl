@@ -875,7 +875,7 @@ function connectPanel(p) {
   const lab = (words, input) => { const l = el('label', 'f'); l.append(el('span', '', words), input); return l; };
   const fields = el('div', 'fields'); fields.append(lab('Data repo, as owner/name', repo), lab('Token', token));
   const guide = el('p', 'small'); guide.append('Use a private repo and a fine-grained token for that one repo, with Contents read and write and nothing else. The token stays in this browser. ');
-  const a = el('a', '', 'How to make them'); a.href = 'guide.html#github'; guide.append(a);
+  const a = el('a', '', 'How to make them, step by step'); a.href = 'github.html'; guide.append(a);
   p.append(el('h3', '', retoken ? 'Enter a new token' : 'Connect to GitHub'),
     el('p', 'small', 'Keep your list in your own private GitHub repo, so every browser you connect has it. Box Ctrl keeps working without it, and this browser stays the working copy.'));
   if (tc && !retoken) p.append(strip('', 'Tool Ctrl is connected here', 'Use the same repo and token, so both tools keep their files side by side. Disconnecting one leaves the other connected.', { label: `Use Tool Ctrl's repo, ${tc.repo}`, run: () => connect(tc.repo, tc.token) }));

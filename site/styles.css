@@ -167,6 +167,14 @@ textarea.in{height:auto;padding:5px 8px;line-height:1.5;resize:none;display:bloc
 .guide h2{margin:0;font-size:var(--t-area);font-weight:600}
 .guide p,.guide li{margin:0}
 .guide ol{margin:0;padding-left:21px;display:flex;flex-direction:column;gap:5px}
+.guide ul.plain{margin:0;padding-left:21px;display:flex;flex-direction:column;gap:5px}
+.guide .fig{margin:5px 0;display:flex;flex-direction:column;gap:5px}
+.guide .fig svg{width:100%;height:auto;color:var(--ink);border:1px solid var(--line);border-radius:13px;background:var(--surface)}
+.guide .shot img{width:100%;height:auto;border:1px solid var(--line);border-radius:8px;display:block}
+.guide .tbl{border-collapse:collapse;font-size:var(--t-cap);width:100%}
+.guide .tbl th{text-align:left;font-weight:600;padding:8px 13px 8px 0;border-bottom:1px solid var(--line);vertical-align:top;white-space:nowrap}
+.guide .tbl td{padding:8px 0;border-bottom:1px solid var(--line);color:var(--soft)}
+@media (max-width:640px){.guide .tbl th{white-space:normal}}
 .foot{border-top:1px solid var(--line);padding:21px 21px 0;display:flex;flex-direction:column;gap:5px;font-size:var(--t-cap);color:var(--soft)}
 .foot p{margin:0;max-width:80ch}.foot b{color:var(--ink);font-weight:600}
 .maker{display:flex;align-items:center;gap:13px;margin-bottom:8px}

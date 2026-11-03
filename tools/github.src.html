@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Box Ctrl · Set up GitHub</title>
+<meta name="description" content="Step by step: keep your Box Ctrl list in your own private GitHub repo, even if you've never used GitHub.">
+<meta name="theme-color" content="#141311">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="icon" href="favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="styles.css">
+<script>try{var t=localStorage.getItem("boxctrl.theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t}catch(e){}</script>
+</head>
+<body>
+<div class="bench">
+<!--STRIP-->
+
+<header class="top">
+  <div class="brand">
+    <h1>Box Ctrl</h1>
+    <span class="by">Set up GitHub</span>
+    <span class="by mono">· x0.1.4</span>
+  </div>
+  <div class="leds">
+    <a href="guide.html" class="guidelink">User guide</a>
+    <a href="index.html" class="guidelink">Back to Box Ctrl</a>
+    <!--THEME-->
+  </div>
+</header>
+
+<div class="guide">
+  <nav aria-label="Setup steps">
+    <a href="#why">Why do this</a>
+    <a href="#how">How it fits together</a>
+    <a href="#need">What you need</a>
+    <a href="#account">1. A GitHub account</a>
+    <a href="#repo">2. Your private repo</a>
+    <a href="#token">3. Your key</a>
+    <a href="#connect">4. Connect Box Ctrl</a>
+    <a href="#tool">5. Tool Ctrl, if you use it</a>
+    <a href="#more">More devices</a>
+    <a href="#daily">Day to day</a>
+    <a href="#fix">If something goes wrong</a>
+    <a href="#words">Words used here</a>
+  </nav>
+  <div>
+    <section id="why"><h2>Why do this</h2>
+      <p>Box Ctrl keeps your list in this browser. That's simple, but a browser can lose it: clearing your history, a new computer, or Safari tidying up after a week away can wipe it. And your list on the Mac isn't on your iPad.</p>
+      <p>Connect your own GitHub repo once and:</p>
+      <ul class="plain">
+        <li><b>Your list is safe.</b> A copy lives on GitHub, not just in one browser.</li>
+        <li><b>Every device has the same list.</b> Change a box on the Mac and it's on the iPad a moment later.</li>
+        <li><b>Nothing is ever really lost.</b> GitHub keeps every earlier version, so a mistake can be undone.</li>
+        <li><b>It's yours.</b> The repo is in your own GitHub account. WOODWERD never sees it, and there's nothing to pay.</li>
+      </ul>
+      <p>It's optional. Without it Box Ctrl works exactly as before. Setting it up takes about 10 minutes, once.</p>
+    </section>
+
+    <section id="how"><h2>How it fits together</h2>
+      <figure class="fig">
+        <svg viewBox="0 0 640 250" role="img" aria-label="Your computer, iPad and phone each sync with one private repo on GitHub, which holds Box Ctrl's list and logo and Tool Ctrl's record.">
+          <g fill="none" stroke="currentColor" stroke-width="1.5">
+            <rect x="20" y="20" width="150" height="54" rx="8"/><rect x="20" y="98" width="150" height="54" rx="8"/><rect x="20" y="176" width="150" height="54" rx="8"/>
+            <rect x="380" y="40" width="240" height="170" rx="13"/>
+            <path d="M170 47 L380 100 M170 125 L380 125 M170 203 L380 150" stroke-dasharray="5 5"/>
+          </g>
+          <g fill="currentColor" font-family="Inter, Arial, sans-serif" font-size="14">
+            <text x="36" y="52">Computer</text><text x="36" y="130">iPad</text><text x="36" y="208">Phone</text>
+            <text x="400" y="70" font-weight="600">Your private repo on GitHub</text>
+          </g>
+          <g fill="currentColor" font-family="JetBrains Mono, Menlo, monospace" font-size="13">
+            <text x="400" y="110">box-ctrl.json</text><text x="400" y="138">box-ctrl-logo.png</text><text x="400" y="166">tool-ctrl.json</text><text x="400" y="194">README.md</text>
+          </g>
+          <g fill="var(--accent-text)" font-family="Inter, Arial, sans-serif" font-size="12"><text x="232" y="116">sync</text></g>
+        </svg>
+        <figcaption class="small">One repo holds everything. Each tool writes its own file and never touches the others.</figcaption>
+      </figure>
+      <p>A <b>repo</b> is a folder on GitHub. You make <b>one</b>, and it holds files for both Box Ctrl and Tool Ctrl. You don't need a repo for each tool.</p>
+      <p>A <b>key</b>, which GitHub calls a token, lets Box Ctrl write to that one folder and nothing else in your account. You make <b>one</b> key, and both tools can use it.</p>
+      <p>After that, each browser you use connects once. From then on, saving to GitHub happens by itself.</p>
+    </section>
+
+    <section id="need"><h2>What you need</h2>
+      <ul class="plain">
+        <li>An email address, for a free GitHub account.</li>
+        <li>A computer, for the setup. Making the repo and key is easier on a big screen.</li>
+        <li>About 10 minutes.</li>
+        <li>Somewhere safe to keep the key for a moment, such as your password manager or Notes.</li>
+      </ul>
+    </section>
+
+    <section id="account"><h2>1. A GitHub account</h2>
+      <p>Already have one? Sign in and skip to step 2.</p>
+      <ol>
+        <li>Go to <a href="https://github.com/signup">github.com/signup</a>.</li>
+        <li>Enter your email, a password and a username. Your username becomes part of your repo's name, such as <span class="mono">your-name/ctrl-data</span>.</li>
+        <li>Choose the free plan if asked. It's all you need.</li>
+      </ol>
+    </section>
+
+    <section id="repo"><h2>2. Your private repo</h2>
+      <ol>
+        <li>Go to <a href="https://github.com/new">github.com/new</a>. You can also click <b>+</b> at the top right of any GitHub page, then <b>New repository</b>.</li>
+        <li><b>Owner:</b> leave it as your username.</li>
+        <li><b>Repository name:</b> type <span class="mono">ctrl-data</span>, or any name you like with letters, numbers and dashes.</li>
+        <li><b>Visibility:</b> choose <b>Private</b>. This matters: your list holds your logo and owner line, and Box Ctrl refuses a public repo.</li>
+        <li>Leave everything else as it is. You don't need a README; Box Ctrl writes one.</li>
+        <li>Click <b>Create repository</b>.</li>
+      </ol>
+      <p>GitHub now shows a page of setup instructions for programmers. You can ignore all of it. Note the name at the top, such as <span class="mono">your-name/ctrl-data</span>. That's what you type into Box Ctrl.</p>
+    </section>
+
+    <section id="token"><h2>3. Your key</h2>
+      <p>GitHub calls this a <b>fine-grained personal access token</b>. It's a long password that only opens the one repo you choose.</p>
+      <ol>
+        <li>Go to <a href="https://github.com/settings/personal-access-tokens/new">github.com/settings/personal-access-tokens/new</a>. You can also get there from your picture at the top right, then <b>Settings</b>, then <b>Developer settings</b> at the bottom of the left side, then <b>Personal access tokens</b>, then <b>Fine-grained tokens</b>, then <b>Generate new token</b>.</li>
+        <li><b>Token name:</b> something you'll recognise, such as <span class="mono">Ctrl tools</span>.</li>
+        <li><b>Expiration:</b> GitHub makes keys run out. Pick a date about a year away. When it runs out, Box Ctrl tells you, and you make a new one the same way.</li>
+        <li><b>Resource owner:</b> leave it as your username.</li>
+        <li><b>Repository access:</b> choose <b>Only select repositories</b>, then pick <span class="mono">ctrl-data</span> from the list.</li>
+        <li><b>Permissions:</b> under <b>Repository permissions</b>, find <b>Contents</b> and set it to <b>Read and write</b>. GitHub adds <b>Metadata</b>, read only, by itself. Leave every other permission as <b>No access</b>.</li>
+        <li>Click <b>Generate token</b>.</li>
+        <li><b>Copy the key now.</b> It starts with <span class="mono">github_pat_</span>. GitHub shows it once and never again. Paste it into your password manager or a note until step 4.</li>
+      </ol>
+      <div class="health warn"><b>Treat it like a password</b><span>Anyone with this key can change the files in that one repo. Don't email it or post it. If you lose it, or think someone saw it, make a new one. Your list in Box Ctrl is safe either way.</span></div>
+    </section>
+
+    <section id="connect"><h2>4. Connect Box Ctrl</h2>
+      <ol>
+        <li>Open <a href="index.html">Box Ctrl</a>. In <b>Label Information</b>, press <b>Connect to GitHub</b>.</li>
+        <li><b>Data repo:</b> type your repo's name with your username, such as <span class="mono">your-name/ctrl-data</span>.</li>
+        <li><b>Token:</b> paste the key from step 3.</li>
+        <li>Press <b>Connect</b>.</li>
+      </ol>
+      <figure class="fig shot"><img src="img/github-connect.png" alt="Box Ctrl's Connect to GitHub panel, with fields for the data repo and the token, and a Connect button." width="766" height="352" loading="lazy"><figcaption class="small">The Connect to GitHub panel in Label Information.</figcaption></figure>
+      <p>Box Ctrl checks the repo is private, saves your list to it, and shows a new row with the repo's name. The header of Label Information now ends in <b>Synced</b>.</p>
+      <figure class="fig shot"><img src="img/github-synced.png" alt="Label Information connected: the header reads 7 boxes, Synced, and a row shows Synced to your-name/ctrl-data with Sync now, Get boxes from Tool Ctrl and Disconnect." width="766" height="172" loading="lazy"><figcaption class="small">Connected. Your list now saves to GitHub by itself.</figcaption></figure>
+      <p>If the repo already has a Box Ctrl list, from another device, Box Ctrl asks which list to keep before anything changes.</p>
+    </section>
+
+    <section id="tool"><h2>5. Tool Ctrl, if you use it</h2>
+      <p>Use the <b>same repo and the same key</b>. In <a href="https://woodwerd.github.io/tool-ctrl/">Tool Ctrl</a>, connect to GitHub with them. Tool Ctrl writes <span class="mono">tool-ctrl.json</span> beside Box Ctrl's files.</p>
+      <p>If Tool Ctrl is connected first, in the same browser, Box Ctrl's Connect panel offers <b>Use Tool Ctrl's repo</b>, and you don't have to paste anything.</p>
+      <p>Then, in Box Ctrl, <b>Get boxes from Tool Ctrl</b> brings your boxes and what's in them across, without exporting a spreadsheet. It shows what's new and changed before anything changes, and never brings serial numbers, warranty details or notes.</p>
+    </section>
+
+    <section id="more"><h2>More devices</h2>
+      <p>Each browser connects on its own, once. On your iPad or another computer, open Box Ctrl, press <b>Connect to GitHub</b>, and enter the same repo name and key. Your list arrives.</p>
+      <p>Your key isn't saved anywhere but the browser you typed it into, which is why you keep it in your password manager. If you've lost it, make a new one in step 3. The old one keeps working until it runs out, unless you delete it on GitHub.</p>
+    </section>
+
+    <section id="daily"><h2>Day to day</h2>
+      <p>There's nothing to do. Every change saves in the browser at once and goes to GitHub a few seconds later. Label Information's header tells you where things stand:</p>
+      <table class="tbl">
+        <tr><th scope="row">Synced</th><td>GitHub has everything.</td></tr>
+        <tr><th scope="row">Saving</th><td>A change is on its way.</td></tr>
+        <tr><th scope="row">Offline · 3 unsent</th><td>No internet. Changes wait here and go when you're back.</td></tr>
+        <tr><th scope="row">Needs attention</th><td>Something needs you. A strip below says what.</td></tr>
+      </table>
+      <p>If you changed the same thing on two devices before either synced, Box Ctrl shows both and asks which to keep.</p>
+    </section>
+
+    <section id="fix"><h2>If something goes wrong</h2>
+      <table class="tbl">
+        <tr><th scope="row">GitHub refused the token</th><td>The key ran out or was deleted. Make a new one in step 3, then press <b>Enter a new token</b>. Nothing in Box Ctrl is lost.</td></tr>
+        <tr><th scope="row">Repo not found</th><td>Check the name is your username, a slash, and the repo name, such as <span class="mono">your-name/ctrl-data</span>. Check the key was made for that repo.</td></tr>
+        <tr><th scope="row">The token can't do that</th><td>The key is missing write access. Edit it on GitHub and set <b>Contents</b> to <b>Read and write</b>.</td></tr>
+        <tr><th scope="row">This repo is public</th><td>On GitHub, open the repo, then <b>Settings</b>, and at the bottom change its visibility to <b>Private</b>.</td></tr>
+        <tr><th scope="row">Read only</th><td>The key can read but not write. Set <b>Contents</b> to <b>Read and write</b>.</td></tr>
+      </table>
+      <p>To stop syncing, press <b>Disconnect</b>. The key is deleted from this browser, and your list stays here and on GitHub.</p>
+    </section>
+
+    <section id="words"><h2>Words used here</h2>
+      <table class="tbl">
+        <tr><th scope="row">GitHub</th><td>A website for keeping files, with a history of every change. Free for this.</td></tr>
+        <tr><th scope="row">Repo</th><td>Short for repository: a folder on GitHub. Yours is private, so only you can see it.</td></tr>
+        <tr><th scope="row">Token, or key</th><td>A long password that only opens what you chose when you made it.</td></tr>
+        <tr><th scope="row">Sync</th><td>Box Ctrl and GitHub swapping changes, so both have the same list.</td></tr>
+        <tr><th scope="row">Commit</th><td>One saved change on GitHub. Each sync makes one, which is how GitHub keeps the history.</td></tr>
+      </table>
+      <p>Privacy: Box Ctrl talks only to GitHub, only for your repo, and only after you connect. The key never goes in a file, a link or an export. See the <a href="guide.html#privacy">guide</a> for the rest.</p>
+    </section>
+  </div>
+</div>
+
+<!--FOOTER-->
+</div>
+<script src="chrome.js"></script>
+</body>
+</html>
