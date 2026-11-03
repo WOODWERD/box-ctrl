@@ -392,6 +392,7 @@ export function readList(o) {
     boxes: o.boxes.map((b) => ({
       id: text(b.id, LIMITS.id), name: text(b.name, LIMITS.name), kind: text(b.kind, LIMITS.kind), c1: text(b.c1, LIMITS.c), c2: text(b.c2, LIMITS.c),
       groupId: ids.has(b.groupId) ? b.groupId : OTHER, icon: ICONS[b.icon] ? b.icon : '', qty: clampQty(b.qty), extra: readExtra(b.extra),
+      k: /^[a-z0-9]{4,24}$/.test(b.k || '') ? b.k : boxKey(),
     })),
   };
 }
@@ -399,6 +400,109 @@ export const writeList = (s) => ({ version: 1, extraCols: s.extraCols || [], pro
 
 // A list file needs the acknowledgement only when it brings a logo not already here (BX-R110)
 export const newLogo = (current, incoming) => incoming.kind === 'img' && !(current.kind === 'img' && current.src === incoming.src);
+
+// ---------- GitHub storage (BX-R145 to BX-R157) ----------
+// BX-R153: a hidden key on each box, never printed or in a spreadsheet, so boxes match across devices
+export const boxKey = () => 'b' + Math.random().toString(36).slice(2, 12).padEnd(10, '0');
+export function withKeys(boxes) { for (const b of boxes) if (!b.k) b.k = boxKey(); return boxes; }
+
+// A short fingerprint of the stored logo, so a sync knows when it changed
+export function logoHash(src) {
+  let h = 0x811c9dc5; const s = String(src || '');
+  for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; }
+  return h.toString(16).padStart(8, '0') + s.length.toString(16);
+}
+export const LOGO_FILE = 'box-ctrl-logo.png';
+// BX-R146: box-ctrl.json is the backup format with the logo image left out and pointed to
+export function docMark(m) {
+  if (m?.kind === 'img' && m.sample) return { kind: 'none' }; // the WOODWERD sample never goes up (BX-R150)
+  if (m?.kind === 'img') return { kind: 'img', path: LOGO_FILE, hash: m.hash || logoHash(m.src), file: m.file, w: m.w, h: m.h, origW: m.origW };
+  return m || { kind: 'none' };
+}
+export const listDoc = (s) => ({ ...writeList(s), mark: docMark(s.mark), boxes: s.boxes.map((b) => ({ ...b })) });
+// Reads box-ctrl.json from the repo. The logo stays a pointer until its file is fetched.
+export function readDoc(o) {
+  const r = readList({ ...o, mark: o?.mark?.kind === 'img' ? { kind: 'none' } : o?.mark });
+  const m = o.mark;
+  if (m?.kind === 'img' && /^[0-9a-f]{8,20}$/.test(m.hash || '')) r.mark = { kind: 'img', path: LOGO_FILE, hash: m.hash, file: text(m.file, 120), w: +m.w || 1, h: +m.h || 1, origW: +m.origW || +m.w || 1 };
+  return { version: 1, ...writeList(r), mark: r.mark };
+}
+
+const stable = (v) => JSON.stringify(v, (k, x) => (x && typeof x === 'object' && !Array.isArray(x) ? Object.fromEntries(Object.keys(x).sort().map((y) => [y, x[y]])) : x));
+export const same = (a, b) => stable(a) === stable(b);
+const clone = (v) => JSON.parse(JSON.stringify(v));
+const byKey = (list, key) => new Map((list || []).map((x) => [x[key], x]));
+const SETTINGS = ['profile', 'custom', 'owner', 'prefix', 'startNo', 'inputs', 'route', 'paper', 'mark', 'extraCols'];
+const SETTING_NAMES = { profile: 'Box size', custom: 'Custom size', owner: 'Owner line', prefix: 'ID prefix', startNo: 'Start numbering at', inputs: 'Print settings', route: 'Print route', paper: 'Paper', mark: 'Your mark', extraCols: 'Kept columns' };
+const FIELD_NAMES = { id: 'ID', name: 'Name', kind: 'Kind', c1: 'Contents line 1', c2: 'Contents line 2', groupId: 'Group', icon: 'Icon', qty: 'Quantity', extra: 'Kept columns', color: 'Colour', text: 'Text colour' };
+const LISTS = [['boxes', 'k'], ['groups', 'id']];
+
+// What changed between two copies, for the commit message and the waiting count (BX-R149, BX-R155)
+export function diffLists(base, cur) {
+  const d = { added: [], changed: [], removed: [], groups: 0, settings: 0 };
+  const B = byKey(base?.boxes, 'k'), C = byKey(cur?.boxes, 'k');
+  for (const [k, x] of C) { if (!B.has(k)) d.added.push(x.id || x.name); else if (!same(B.get(k), x)) d.changed.push(x.id || x.name); }
+  for (const [k, x] of B) if (!C.has(k)) d.removed.push(x.id || x.name);
+  if (!same(base?.groups, cur?.groups)) d.groups = 1;
+  d.settings = SETTINGS.filter((f) => !same(base?.[f], cur?.[f])).length;
+  d.total = d.added.length + d.changed.length + d.removed.length + d.groups + d.settings;
+  return d;
+}
+export function listCommitMessage(base, cur) {
+  if (!base) return 'Box Ctrl: first list';
+  const d = diffLists(base, cur), parts = [], n = (a, w) => `${a.length === 1 && a[0] ? a[0] : `${a.length} boxes`} ${w}`;
+  if (d.added.length) parts.push(n(d.added, 'added'));
+  if (d.changed.length) parts.push(n(d.changed, 'changed'));
+  if (d.removed.length) parts.push(n(d.removed, 'removed'));
+  if (d.groups) parts.push('groups changed');
+  if (d.settings) parts.push(!same(base.mark, cur.mark) ? 'mark changed' : 'settings changed');
+  return `Box Ctrl: ${parts.join(', ') || 'no changes'}`;
+}
+
+// BX-R154: three-way merge, field by field. Where both changed the same field, this device's value stays
+// for now and the field is listed for the person to choose (BX-S22).
+export function mergeLists(base, local, remote) {
+  base = base || { boxes: [], groups: [] };
+  const out = {}, conflicts = [];
+  for (const [kind, key] of LISTS) {
+    const B = byKey(base[kind], key), L = byKey(local[kind], key), R = byKey(remote[kind], key), list = [];
+    const order = [...(remote[kind] || []).map((x) => x[key]), ...(local[kind] || []).map((x) => x[key]).filter((k) => !R.has(k))];
+    for (const k of order) {
+      const b = B.get(k), l = L.get(k), r = R.get(k);
+      if (l && !r) { if (!b || !same(l, b)) list.push(l); continue; } // removed there: kept only if changed here
+      if (r && !l) { if (!b || !same(r, b)) list.push(r); continue; }
+      if (same(l, r) || same(r, b)) { list.push(l); continue; }
+      if (same(l, b)) { list.push(r); continue; }
+      const m = {};
+      for (const f of new Set([...Object.keys(l), ...Object.keys(r)])) {
+        const lv = l[f], rv = r[f], bv = b?.[f];
+        if (same(lv, rv) || same(rv, bv)) m[f] = lv;
+        else if (same(lv, bv)) m[f] = rv;
+        else { m[f] = lv; conflicts.push({ kind, key: k, field: f, local: lv, remote: rv, label: `${kind === 'boxes' ? l.id || l.name || 'A box' : `${l.name} group`} · ${FIELD_NAMES[f] || f}` }); }
+      }
+      list.push(m);
+    }
+    out[kind] = clone(list);
+  }
+  for (const f of SETTINGS) {
+    const lv = local[f], rv = remote[f], bv = base[f];
+    if (same(lv, rv) || same(rv, bv)) out[f] = clone(lv);
+    else if (same(lv, bv)) out[f] = clone(rv);
+    else if (f === 'extraCols') out[f] = mergeCols(lv || [], rv || []);
+    else { out[f] = clone(lv); conflicts.push({ kind: 'settings', key: f, field: f, local: lv, remote: rv, label: SETTING_NAMES[f] }); }
+  }
+  if (!out.groups.some((g) => g.id === OTHER)) out.groups.push(startGroups().find((g) => g.id === OTHER));
+  const gids = new Set(out.groups.map((g) => g.id));
+  for (const b of out.boxes) if (!gids.has(b.groupId)) b.groupId = OTHER; // a group removed on one side
+  return { list: { version: 1, ...out }, conflicts };
+}
+// BX-S22: apply the person's choice for one field
+export function resolveListConflict(list, cf, keep) {
+  const v = clone(keep === 'remote' ? cf.remote : cf.local) ?? null;
+  if (cf.kind === 'settings') { list[cf.field] = v; return; }
+  const key = cf.kind === 'boxes' ? 'k' : 'id', x = list[cf.kind].find((y) => y[key] === cf.key);
+  if (x) x[cf.field] = v;
+}
 
 // ---------- file names and zip (BX-R75, BX-R94) ----------
 export function localDate(d = new Date()) {

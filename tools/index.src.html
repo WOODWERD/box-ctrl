@@ -23,7 +23,7 @@
   <div class="brand">
     <h1>Box Ctrl</h1>
     <span class="by">Labels sized to your tool box</span>
-    <span class="by mono">· x0.1.1</span>
+    <span class="by mono">· x0.1.2</span>
     <span class="tag" id="tourTag" hidden>Tutorial · sample list</span>
   </div>
   <div class="leds" aria-live="polite">
@@ -106,7 +106,15 @@
       <a class="key" href="box-ctrl-template.xlsx" download><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.500" y="4.500" width="17" height="15" rx="1.500"/><path d="M3.500 9.500h17M3.500 14.500h17M10 4.500v15"/></svg>Get template</a>
       <button class="key" type="button" id="exportCsv"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V4M7.500 8.500 12 4l4.500 4.500M4.500 15v3.500a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V15"/></svg>Export spreadsheet</button>
       <button class="key" type="button" id="exportList">Export backup</button>
+      <button class="key" type="button" id="ghConnect"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 14a4 4 0 0 0 5.700 0l3-3a4 4 0 0 0-5.700-5.700l-1 1M14 10a4 4 0 0 0-5.700 0l-3 3a4 4 0 0 0 5.700 5.700l1-1"/></svg>Connect to GitHub</button>
       <span class="tag" id="examples" hidden>Examples</span>
+    </div>
+    <div class="tools" id="ghRow" hidden aria-label="GitHub storage">
+      <span class="small">Synced to</span><span class="mono small" id="ghRepo"></span>
+      <button class="key" type="button" id="ghSync"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M19.500 12a7.500 7.500 0 0 1-13.400 4.600M4.500 12a7.500 7.500 0 0 1 13.400-4.600M18 3.500v4h-4M6 20.500v-4h4"/></svg>Sync now</button>
+      <button class="key" type="button" id="ghTool"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11M7.500 10.500 12 15l4.500-4.500M4.500 15v3.500a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V15"/></svg>Get boxes from Tool Ctrl</button>
+      <span class="sp"></span>
+      <button class="key" type="button" id="ghOff">Disconnect</button>
     </div>
     <p class="small note" id="catalogHint" hidden>Standard tools from Festool, Milwaukee, DEWALT, Bosch and Makita are already loaded. Press Add standard tools to pick yours.</p>
     <div id="panel" hidden></div>

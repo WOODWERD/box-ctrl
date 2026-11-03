@@ -2,6 +2,9 @@
 import * as c from './core.js';
 import { ICONS, ICON_GROUPS, searchIcons } from './icons.js';
 import { searchCatalog, CATALOG_DATE, BRANDS } from './catalog.js';
+import { client, repoError, LOGO_PATH, TOOL_CTRL_PATH } from './github.js';
+import { syncOnce, waiting, readRemote } from './sync.js';
+import { readToolCtrl, planToolCtrl, applyToolCtrl } from './toolctrl.js';
 
 const $ = (id) => document.getElementById(id);
 const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
@@ -31,6 +34,8 @@ const listOf = () => ({ ...S, mark: mark() });
 // ---------- storage (BX-R93). The tutorial never saves (BX-R122) ----------
 function save() {
   if (S.tour) return;
+  c.withKeys(S.boxes);
+  later(); // BX-R149: changes go to GitHub a few seconds after the last edit
   try {
     localStorage.setItem(KEY, JSON.stringify({ ...c.writeList(listOf()), examples: S.examples, ui: { markTab: S.markTab, logo: S.logo, textMark: S.textMark, iconMark: S.iconMark } }));
     S.stored = true;
@@ -60,7 +65,7 @@ function restore() {
   } catch { S.stored = false; }
 }
 const groupOf = (id) => S.groups.find((g) => g.id === id) || S.groups.find((g) => g.id === c.OTHER);
-function changed() { S.examples = false; S.fileNote = ''; S.undoIds = null; save(); refresh(); }
+function changed() { S.examples = false; S.fileNote = ''; S.undoIds = null; S.tcUndo = null; save(); refresh(); }
 
 // ---------- text and images ----------
 const mctx = document.createElement('canvas').getContext('2d');
@@ -256,6 +261,10 @@ function renderPanel() {
   if (S.panel === 'tools') toolsPanel(p);
   if (S.panel === 'list') listPanel(p);
   if (S.panel === 'sheet') sheetPanel(p);
+  if (S.panel === 'connect') connectPanel(p);
+  if (S.panel === 'choice') choicePanel(p);
+  if (S.panel === 'conflict') conflictPanel(p);
+  if (S.panel === 'tc') toolCtrlPanel(p);
 }
 
 function groupsPanel(p) {
@@ -471,14 +480,19 @@ function logoPanel(host) {
   const f = S.pending, d = el('div', 'panel');
   d.setAttribute('role', 'alertdialog'); d.setAttribute('aria-label', 'Before you add this logo');
   const tools = el('div', 'tools');
-  tools.append(button('key go', 'I own it or have permission', () => { S.logo = S.pending; S.markTab = 'up'; S.pending = null; changed(); backToLogo(); }), button('key', 'Cancel', () => { S.pending = null; refresh(); backToLogo(); }));
+  tools.append(button('key go', 'I own it or have permission', () => {
+    const fromRepo = S.pending.fromRepo; delete S.pending.fromRepo;
+    S.logo = S.pending; S.markTab = 'up'; S.pending = null; acceptLogo(S.logo);
+    if (fromRepo) { S.repoLogo = null; S.syncState = 'ok'; save(); refresh(); syncNow(); } else changed();
+    backToLogo();
+  }), button('key', 'Cancel', () => { S.pending = null; refresh(); backToLogo(); }));
   d.tabIndex = -1;
   const head = el('div', 'logohead'), name = el('div'), thumb = el('img', 'logothumb');
   thumb.src = f.src; thumb.alt = '';
   name.append(el('h3', '', 'Before you add this logo'), el('p', 'small mono', `${f.file} · ${f.w} × ${f.h} px`));
   head.append(thumb, name);
   d.append(head,
-    el('p', 'note', "Only add a logo you own or have permission to use. You're responsible for how you use it, including any trademark or copyright in it. Box Ctrl doesn't check logos, doesn't keep a copy, and takes no responsibility for your use of one."), tools);
+    el('p', 'note', "Only add a logo you own or have permission to use. You're responsible for how you use it, including any trademark or copyright in it. Box Ctrl doesn't check logos. It keeps the logo in this browser, and in your own GitHub repo if you connect one, and takes no responsibility for your use of it."), tools);
   d.querySelector('.note').style.fontSize = 'var(--t-cap)';
   host.append(d);
 }
@@ -672,13 +686,31 @@ function refresh(keepNote) {
   }
 
   // Area 2
-  if (!S.stored && !S.tour) a2.append(strip('warn', 'Not saving', "This browser isn't keeping your list. Export it before you close.", { label: 'Export backup', run: exportList }));
+  if (!S.stored && !S.tour) a2.append(strip('warn', 'Not saving', `This browser isn't keeping your list. Export it before you close.${S.gh ? ' Your GitHub repo has the last synced copy, and the token is kept for this visit only.' : ''}`, { label: 'Export backup', run: exportList }));
+  // GitHub storage (BX-U24, BX-S23, BX-R152, BX-R165)
+  const gh = !!S.gh && !S.tour;
+  $('ghConnect').hidden = !!S.gh; $('ghConnect').disabled = !!S.tour;
+  $('ghConnect').setAttribute('aria-expanded', String(S.panel === 'connect'));
+  $('ghRow').hidden = !S.gh;
+  if (S.gh) { $('ghRepo').textContent = S.gh.repo; $('ghSync').disabled = $('ghTool').disabled = !gh || S.syncState === 'busy'; $('ghTool').setAttribute('aria-expanded', String(S.panel === 'tc')); }
+  if (gh && S.syncState === 'error' && S.syncErr) {
+    const n = waiting(S.sync?.base, localDoc()), keep = n ? ` Your ${n === 1 ? 'change is kept in this browser and goes' : `${n} changes are kept in this browser and go`} up once it works.` : '';
+    a2.append(strip('bad', S.syncErr.title || 'Sync stopped', S.syncErr.text + keep, ...(['auth', 'rights'].includes(S.syncErr.kind) ? [{ label: 'Enter a new token', run: () => openPanel('connect', { retoken: true }) }] : [{ label: 'Try again', run: syncNow }]), { label: 'Disconnect', run: disconnect }));
+  }
+  if (gh && S.gh.readOnly) a2.append(strip('warn', 'Read only', `This token can read ${S.gh.repo} but not write to it, so changes here don't go to the repo. Give it Contents read and write.`));
+  if (gh && S.repoLogo && !S.pending) a2.append(strip('warn', 'Sync paused', "Your repo has a logo this browser hasn't accepted yet. Accept it, or choose another mark here to replace it on GitHub.", { label: 'Review the logo', run: () => { S.pending = { ...S.repoLogo.img, white: false, fromRepo: true }; refresh(); showLogoSpot(); } }));
+  if (gh && S.tcChanged && S.panel !== 'tc') a2.append(strip('', "Tool Ctrl's record has changed", "It has changed since you last got boxes. Nothing changes here until you get them.", { label: 'Get boxes', run: getBoxes }));
+  if (S.ghNote && S.panel !== 'connect') a2.append(strip('bad', 'Tool Ctrl', S.ghNote));
+  if (S.tcUndo) a2.append(strip('ok', 'Updated from Tool Ctrl', 'The list now matches Tool Ctrl\'s record.', { label: 'Undo', run: () => { Object.assign(S, S.tcUndo); S.tcUndo = null; buildList(); save(); refresh(); } }));
   if (S.fileNote) a2.append(strip('bad', 'File', S.fileNote));
   $('examples').hidden = !S.examples;
   $('catalogHint').hidden = !S.examples || S.panel === 'tools';
   $('exportList').disabled = $('exportCsv').disabled = $('openFile').disabled = !!S.tour;
   $('addCatalog').classList.toggle('hl', !!S.tour && !S.tour.done && TOUR[S.tour.step].target === 'addCatalog');
-  state('a2State', !S.stored ? 'Not saving' : notes.flagged ? `${notes.flagged} box${notes.flagged === 1 ? '' : 'es'} to check` : total ? `${S.boxes.length} box${S.boxes.length === 1 ? '' : 'es'}` : '0 labels', !S.stored || notes.flagged ? 'warn' : total ? 'ok' : 'idle');
+  const sy = gh ? { ok: ['Synced', ''], busy: ['Saving', 'busy'], offline: [`Offline · ${waiting(S.sync?.base, localDoc())} unsent`, 'warn'], error: ['Needs attention', 'bad'], conflict: ['Needs attention', 'warn'], paused: ['Needs attention', 'warn'], idle: ['Nothing to sync yet', ''] }[S.syncState] : null;
+  const a2Base = !S.stored ? 'Not saving' : notes.flagged ? `${notes.flagged} box${notes.flagged === 1 ? '' : 'es'} to check` : total ? `${S.boxes.length} box${S.boxes.length === 1 ? '' : 'es'}` : '0 labels';
+  const a2Tone = sy?.[1] === 'bad' ? 'bad' : !S.stored || notes.flagged || sy?.[1] === 'warn' ? 'warn' : sy?.[1] === 'busy' ? 'busy' : total ? 'ok' : 'idle';
+  state('a2State', sy ? `${a2Base} · ${sy[0]}` : a2Base, a2Tone);
   $('fill').textContent = total ? `${total} label${total === 1 ? '' : 's'} on ${sheets} ${unit}${sheets === 1 ? '' : 's'} · ${sheets * cap.n - total ? `${sheets * cap.n - total} open spot${sheets * cap.n - total === 1 ? '' : 's'} on ${unit} ${sheets}` : `last ${unit} is full`}` : 'No labels yet';
   drawPreview($('art2'), $('art2').parentElement.clientWidth, false);
   $('art2Name').textContent = `${nm}, as printed`;
@@ -733,6 +765,238 @@ function syncInputs() {
   ['customW', 'customH', 'B', 'G'].forEach((k) => $(k).classList.remove('bad'));
 }
 
+// ---------- GitHub storage (BX-R140 to BX-R159) ----------
+const GH_KEY = 'boxctrl.github', SYNC_KEY = 'boxctrl.sync', TC_KEY = 'toolctrl.github'; // the token lives here only (BX-R143)
+const readJson = (k) => { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } };
+const writeJson = (k, v) => { try { if (v) localStorage.setItem(k, JSON.stringify(v)); else localStorage.removeItem(k); } catch { /* storage off: this visit only (BX-E18) */ } };
+const loadConn = () => { const o = readJson(GH_KEY); return o && o.repo && o.token ? o : null; };
+const toolConn = () => { const o = readJson(TC_KEY); return o && o.repo && o.token ? o : null; }; // BX-R142: same address, so Tool Ctrl's key is readable here
+Object.assign(S, { gh: loadConn(), sync: readJson(SYNC_KEY), syncState: 'off', syncErr: null, conflict: null, repoLogo: null, ghNote: '', tcChanged: false, tcUndo: null });
+const api = () => client(S.gh.repo, S.gh.token);
+const localDoc = () => { c.withKeys(S.boxes); return c.listDoc(listOf()); };
+const logoB64 = () => { const m = mark(); return m.kind === 'img' && !m.sample ? m.src.split(',')[1] : null; };
+const accepted = (hash) => (S.sync?.accepted || []).includes(hash);
+function acceptLogo(m) { if (!S.sync || m?.kind !== 'img') return; const h = c.logoHash(m.src); S.sync.accepted = [...new Set([...(S.sync.accepted || []), h])].slice(-20); writeJson(SYNC_KEY, S.sync); }
+
+let syncTimer = 0, syncing = false, again = false;
+function later(ms = 4000) { if (!S.gh || S.tour || S.conflict) return; clearTimeout(syncTimer); syncTimer = setTimeout(syncNow, ms); }
+async function syncNow() {
+  if (!S.gh || S.tour || S.conflict || S.panel === 'choice') return;
+  if (S.examples) { S.syncState = 'idle'; refresh(true); return; } // the examples never go up (BX-R148)
+  // BX-R152: a repo logo waiting on the acknowledgement holds the sync until it's accepted or another mark is chosen
+  if (S.repoLogo && c.same(c.docMark(mark()), S.repoLogo.localMark)) { S.syncState = 'paused'; refresh(true); return; }
+  S.repoLogo = null;
+  if (syncing) { again = true; return; }
+  if (!navigator.onLine) { S.syncState = 'offline'; refresh(true); return; }
+  syncing = true; S.syncState = 'busy'; refresh(true);
+  const snap = localDoc();
+  let res;
+  if (S.gh.readOnly) {
+    const rem = await readRemote(api(), S.gh.repo);
+    res = rem.error ? { status: 'error', error: rem.error } : rem.missing ? { status: 'synced', list: snap, base: S.sync?.base, sha: S.sync?.sha } : { status: 'synced', list: rem.doc, base: rem.doc, sha: rem.sha };
+  } else res = await syncOnce({ gh: api(), repo: S.gh.repo, local: snap, base: S.sync?.base || null, sha: S.sync?.sha || null, logoB64: logoB64() });
+  syncing = false;
+  await applySync(res, snap);
+  if (again) { again = false; later(500); }
+}
+async function applySync(res, snap) {
+  if (res.status === 'error') { S.syncState = res.error.kind === 'offline' ? 'offline' : 'error'; S.syncErr = res.error; refresh(true); return; }
+  if (res.status === 'conflict') { S.conflict = { ...res, picks: res.conflicts.map(() => '') }; S.syncState = 'conflict'; openPanel('conflict'); return; }
+  let next = res.list;
+  const now = localDoc();
+  if (snap && !c.same(snap, now)) next = c.mergeLists(snap, now, res.list).list; // edits made while it ran stay on top
+  S.sync = { ...S.sync, repo: S.gh.repo, base: res.base, sha: res.sha, lastSync: new Date().toISOString() };
+  writeJson(SYNC_KEY, S.sync);
+  S.syncState = 'ok'; S.syncErr = null;
+  if (!c.same(next, now)) await fromDoc(next);
+  checkToolCtrl();
+  refresh(true);
+}
+// Puts a list from GitHub into this browser. A logo this browser hasn't accepted waits on BX-S18 (BX-R152).
+async function fromDoc(d) {
+  const before = c.docMark(mark());
+  Object.assign(S, { profile: d.profile, custom: d.custom, owner: d.owner, prefix: d.prefix, startNo: d.startNo, extraCols: d.extraCols, groups: d.groups, inputs: d.inputs, route: d.route, paper: d.paper, boxes: d.boxes.length ? d.boxes : [c.blankBox(c.nextId([], d.prefix))], examples: false });
+  S.sel = Math.min(S.sel, S.boxes.length - 1);
+  if (!c.same(before, d.mark)) {
+    if (d.mark.kind !== 'img') applyMark(d.mark);
+    else if (S.logo && c.logoHash(S.logo.src) === d.mark.hash) S.markTab = 'up';
+    else {
+      const f = await api().raw(LOGO_PATH);
+      const img = f.b64 ? { kind: 'img', src: `data:image/png;base64,${f.b64}`, file: d.mark.file, w: d.mark.w, h: d.mark.h, origW: d.mark.origW } : null;
+      if (img && accepted(c.logoHash(img.src))) { S.logo = img; S.markTab = 'up'; }
+      else if (img) { S.repoLogo = { localMark: before, img }; S.pending = { ...img, white: false, fromRepo: true }; S.syncState = 'paused'; }
+    }
+  }
+  syncInputs(); renderPanel(); buildList();
+  try { localStorage.setItem(KEY, JSON.stringify({ ...c.writeList(listOf()), examples: false, ui: { markTab: S.markTab, logo: S.logo, textMark: S.textMark, iconMark: S.iconMark } })); S.stored = true; } catch { S.stored = false; }
+  if (S.pending) showLogoSpot();
+}
+
+async function connect(repo, token) {
+  repo = repo.trim(); token = token.trim();
+  S.ghNote = repoError(repo) || (!token ? 'Paste the token from GitHub.' : '');
+  if (S.ghNote) return renderPanel();
+  S.connecting = true; renderPanel();
+  const gh = client(repo, token), chk = await gh.check();
+  const stop = (msg) => { S.connecting = false; S.ghNote = msg; renderPanel(); refresh(true); };
+  if (chk.error) return stop(`${chk.error.title}. ${chk.error.text}`);
+  if (!chk.private) return stop('This repo is public. Make it private on GitHub first, since it would hold your logo and owner line.'); // BX-R144
+  // A new token for the same repo carries on from the last sync, keeping what waits here
+  if (S.sync?.repo === repo && S.sync.base) {
+    S.gh = { repo, token, readOnly: !chk.canWrite }; writeJson(GH_KEY, S.gh); S.connecting = false; S.ghNote = ''; S.syncErr = null; closePanel(); return syncNow();
+  }
+  const rem = await readRemote(gh, repo);
+  if (rem.error) return stop(`${rem.error.title || 'That didn\'t work'}. ${rem.error.text}`);
+  S.gh = { repo, token, readOnly: !chk.canWrite }; writeJson(GH_KEY, S.gh);
+  S.sync = { repo, base: null, sha: null, accepted: S.logo ? [c.logoHash(S.logo.src)] : [] }; writeJson(SYNC_KEY, S.sync);
+  S.connecting = false; S.ghNote = ''; S.syncErr = null;
+  if (rem.missing) { closePanel(); return syncNow(); }
+  // BX-R148: both have a list, so ask which to keep. A browser still on the examples just takes the repo's.
+  if (!S.examples && !c.same(localDoc(), rem.doc)) return openPanel('choice', { remote: rem.doc, sha: rem.sha });
+  closePanel();
+  await applySync({ status: 'synced', list: rem.doc, base: rem.doc, sha: rem.sha }, null);
+}
+function disconnect() {
+  if (!confirm(`Disconnect from GitHub in this browser? The token is deleted here. Your list stays here and in ${S.gh.repo}.`)) return;
+  clearTimeout(syncTimer);
+  Object.assign(S, { gh: null, sync: null, syncState: 'off', syncErr: null, conflict: null, repoLogo: null, tcChanged: false });
+  if (S.pending?.fromRepo) S.pending = null;
+  writeJson(GH_KEY, null); writeJson(SYNC_KEY, null);
+  if (['conflict', 'choice', 'tc'].includes(S.panel)) closePanel(); else refresh();
+}
+addEventListener('online', () => { if (S.gh) syncNow(); });
+
+// BX-S21
+function connectPanel(p) {
+  p.setAttribute('aria-label', 'Connect to GitHub');
+  const tc = toolConn(), retoken = S.plan?.retoken;
+  const repo = el('input', 'in m'); repo.value = retoken ? S.gh.repo : ''; repo.placeholder = 'your-name/ctrl-data'; repo.autocomplete = 'off'; repo.spellcheck = false;
+  const token = el('input', 'in m'); token.type = 'password'; token.placeholder = 'github_pat_…'; token.autocomplete = 'off';
+  const lab = (words, input) => { const l = el('label', 'f'); l.append(el('span', '', words), input); return l; };
+  const fields = el('div', 'fields'); fields.append(lab('Data repo, as owner/name', repo), lab('Token', token));
+  const guide = el('p', 'small'); guide.append('Use a private repo and a fine-grained token for that one repo, with Contents read and write and nothing else. The token stays in this browser. ');
+  const a = el('a', '', 'How to make them'); a.href = 'guide.html#github'; guide.append(a);
+  p.append(el('h3', '', retoken ? 'Enter a new token' : 'Connect to GitHub'),
+    el('p', 'small', 'Keep your list in your own private GitHub repo, so every browser you connect has it. Box Ctrl keeps working without it, and this browser stays the working copy.'));
+  if (tc && !retoken) p.append(strip('', 'Tool Ctrl is connected here', 'Use the same repo and token, so both tools keep their files side by side. Disconnecting one leaves the other connected.', { label: `Use Tool Ctrl's repo, ${tc.repo}`, run: () => connect(tc.repo, tc.token) }));
+  p.append(fields, guide);
+  if (S.ghNote) p.append(strip('bad', 'Not connected', S.ghNote));
+  const tools = el('div', 'tools'), go = button('key go', S.connecting ? 'Connecting…' : 'Connect', () => connect(repo.value, token.value));
+  go.disabled = !!S.connecting;
+  tools.append(go, button('key', 'Cancel', () => { S.ghNote = ''; closePanel(); }));
+  p.append(tools);
+}
+// BX-R148, BX-S21: the repo already has a list
+function choicePanel(p) {
+  const r = S.plan.remote, here = localDoc(), n = (d) => `${d.boxes.length} box${d.boxes.length === 1 ? '' : 'es'}${d.mark.kind === 'img' ? ' · logo' : ''}`;
+  p.setAttribute('role', 'alertdialog'); p.setAttribute('aria-label', 'This repo already has a list');
+  const pick = el('div', 'pick2'), opt = (title, words, label, run) => { const o = el('div', 'opt'); o.append(el('b', '', title), el('span', 'small', words), button('key', label, run)); return o; };
+  pick.append(opt('Use the repo\'s list', n(r), 'Use the repo\'s list', async () => { const d = S.plan; closePanel(); await applySync({ status: 'synced', list: d.remote, base: d.remote, sha: d.sha }, null); }),
+    opt('Replace it with this browser\'s', n(here), 'Replace with this browser\'s', () => { S.sync = { ...S.sync, base: S.plan.remote, sha: S.plan.sha }; writeJson(SYNC_KEY, S.sync); closePanel(); syncNow(); }));
+  const tools = el('div', 'tools');
+  tools.append(button('key', 'Export backup first', exportList), el('span', 'sp'), button('key', 'Cancel and disconnect', () => { closePanel(); Object.assign(S, { gh: null, sync: null, syncState: 'off' }); writeJson(GH_KEY, null); writeJson(SYNC_KEY, null); refresh(); }));
+  const t = el('p', 'small'); t.append('Connected to '); t.append(el('span', 'mono', S.gh.repo)); t.append('. Choose which list to keep. The other is replaced, so export it first if you want a copy.');
+  p.append(el('h3', '', 'This repo already has a Box Ctrl list'), t, pick, tools);
+}
+// BX-S22: both sides changed the same field
+const PROFILE_NAME = Object.fromEntries(c.PROFILES.map((x) => [x.id, x.fits]));
+function shown(cf, v, groups) {
+  if (v == null || v === '') return '(empty)';
+  const f = cf.field;
+  if (f === 'groupId') return (groups.find((g) => g.id === v) || {}).name || v;
+  if (f === 'mark') return v.kind === 'img' ? `Logo · ${v.file}` : v.kind === 'text' ? `Text mark · ${v.text}` : v.kind === 'icon' ? `Icon · ${ICONS[v.icon]?.name || v.icon}` : 'None';
+  if (f === 'profile') return PROFILE_NAME[v] || 'Custom size';
+  if (f === 'custom') return `${v.W} × ${v.H}`;
+  if (f === 'inputs') return `Cut border ${v.B} · space ${v.G}`;
+  if (f === 'owner') return String(v).split('\n').join(' / ');
+  if (f === 'icon') return ICONS[v]?.name || v;
+  return typeof v === 'object' ? JSON.stringify(v) : String(v);
+}
+function conflictPanel(p) {
+  const cf = S.conflict, n = cf.conflicts.length, left = cf.picks.filter((x) => !x).length;
+  p.setAttribute('aria-label', 'Sync conflict');
+  p.append(el('h3', '', `${n === 1 ? 'One thing' : `${n} things`} changed on another device too`), el('p', 'small', 'Everything else synced. Choose which value to keep for each. Sync finishes once all are chosen.'));
+  const list = el('div', 'cf');
+  cf.conflicts.forEach((x, i) => {
+    const row = el('div', 'cfr'), v = (who, val) => { const d = el('span', 'cfv'); d.append(el('span', 'small', who), el('b', '', shown(x, val, cf.merged.groups))); return d; };
+    const seg = el('div', 'segc'); seg.setAttribute('role', 'group'); seg.setAttribute('aria-label', `Keep for ${x.label}`);
+    [['local', 'This device\'s'], ['remote', 'GitHub\'s']].forEach(([k, words]) => { const b = button('', words, () => { cf.picks[i] = k; renderPanel(); }); b.setAttribute('aria-pressed', String(cf.picks[i] === k)); seg.append(b); });
+    row.append(el('span', '', x.label), v('This device', x.local), v('GitHub', x.remote), seg);
+    list.append(row);
+  });
+  const tools = el('div', 'tools'), go = button('key go', 'Finish sync', finishConflict);
+  go.disabled = left > 0;
+  tools.append(go); if (left) tools.append(el('span', 'small', `${left} left to choose`));
+  p.append(list, tools);
+}
+async function finishConflict() {
+  const cf = S.conflict;
+  cf.conflicts.forEach((x, i) => c.resolveListConflict(cf.merged, x, cf.picks[i]));
+  S.conflict = null; closePanel();
+  S.sync = { ...S.sync, base: cf.remote, sha: cf.remoteSha }; writeJson(SYNC_KEY, S.sync);
+  await fromDoc(cf.merged); save(); refresh(); syncNow();
+}
+
+// ---------- Get boxes from Tool Ctrl (BX-R160 to BX-R167) ----------
+async function getBoxes() {
+  if (S.panel === 'tc') return closePanel();
+  S.ghNote = '';
+  const tc = toolConn();
+  if (tc && tc.repo !== S.gh.repo) return openPanel('tc', { other: tc }); // BX-R166: never read with Tool Ctrl's token behind the scenes
+  const f = await api().read(TOOL_CTRL_PATH);
+  if (f.missing) { S.ghNote = `There's no Tool Ctrl record in ${S.gh.repo}.`; return refresh(); }
+  if (f.error) { S.ghNote = `${f.error.title}. ${f.error.text}`; return refresh(); }
+  const r = readToolCtrl(f.text, S.gh.repo);
+  if (r.error) { S.ghNote = r.error; return refresh(); }
+  const drawers = !!S.tcDrawers;
+  openPanel('tc', { rec: r.record, sha: f.sha, drawers, onlyChanged: false, plan: planToolCtrl(S, r.record, { compartments: drawers, base: S.examples ? [] : S.boxes }) });
+}
+async function checkToolCtrl() {
+  if (!S.sync?.tcSha || S.tour) return;
+  const l = await api().list();
+  const sha = l.files?.[TOOL_CTRL_PATH];
+  S.tcChanged = !!sha && sha !== S.sync.tcSha; refresh(true);
+}
+function toolCtrlPanel(p) {
+  const d = S.plan;
+  p.setAttribute('aria-label', 'Boxes from Tool Ctrl');
+  if (d.other) {
+    const t = el('p', 'small'); t.append('Tool Ctrl in this browser uses '); t.append(el('span', 'mono', d.other.repo)); t.append('. Box Ctrl uses '); t.append(el('span', 'mono', S.gh.repo)); t.append('. Box Ctrl reads Tool Ctrl\'s record only from its own repo.');
+    const tools = el('div', 'tools');
+    tools.append(button('key go', `Switch to ${d.other.repo}`, () => { writeJson(GH_KEY, null); writeJson(SYNC_KEY, null); Object.assign(S, { gh: null, sync: null }); connect(d.other.repo, d.other.token); }), button('key', 'Cancel', closePanel));
+    p.append(el('h3', '', 'The two tools use different repos'), t, tools);
+    return;
+  }
+  const pl = d.plan, words = (a, w) => `${a} ${w}`;
+  p.append(el('h3', '', `From Tool Ctrl: ${words(pl.added.length, 'new')}, ${words(pl.changed.length, 'changed')}, ${words(pl.same, 'unchanged')}`));
+  const t = el('p', 'small'); t.append('Read from '); t.append(el('span', 'mono', TOOL_CTRL_PATH)); t.append(' in '); t.append(el('span', 'mono', S.gh.repo)); t.append('. Only IDs, names, kinds, contents, groups and icons come across. Warranty details, locations and notes never do. Nothing changes until you press Update list.');
+  const seg = el('div', 'segc'); seg.setAttribute('role', 'group'); seg.setAttribute('aria-label', 'Rows');
+  [[false, 'One per box'], [true, 'One per drawer']].forEach(([v, w]) => { const b = button('', w, () => { S.tcDrawers = v; d.drawers = v; d.plan = planToolCtrl(S, d.rec, { compartments: v, base: S.examples ? [] : S.boxes }); renderPanel(); }); b.setAttribute('aria-pressed', String(d.drawers === v)); seg.append(b); });
+  const rows = el('div', 'f'); rows.append(el('span', '', 'Rows'), seg);
+  const sum = el('div', 'sumt'), line = (title, words) => { const r = el('div', 'sr'); r.append(el('b', '', title), el('span', '', words)); sum.append(r); };
+  const ids = (a) => (a.length > 8 ? `${a.slice(0, 8).join(' · ')} and ${a.length - 8} more` : a.join(' · '));
+  if (pl.added.length) line('New', `${ids(pl.added.map((b) => `${b.id} ${b.name}`))}. Added at the end, Quantity 1.`);
+  if (pl.changed.length) line('Changed', `${ids(pl.changed.map((x) => `${x.id} ${x.fields.map((f) => ({ c1: 'contents', c2: 'contents' }[f] || f)).filter((f, i, a) => a.indexOf(f) === i).join(' and ')}`))}. Group, icon, quantity and kept columns stay as they are here.`);
+  if (pl.notIn.length && !S.examples) line('Not in Tool Ctrl', `${ids(pl.notIn)}. Kept on this list.`);
+  if (pl.newGroups.length) line('New groups', pl.newGroups.join(', '));
+  if (!sum.childElementCount) line('Nothing new', 'This list already matches Tool Ctrl\'s record.');
+  p.append(t, rows, sum);
+  pl.overruns.slice(0, 4).forEach((o) => p.append(strip('warn', o.id, `Its items run past two lines, so the first ${o.total - o.left} of ${o.total} are kept on the label.`)));
+  pl.skipped.slice(0, 4).forEach((s) => p.append(strip('warn', s.split(': ')[0], s.split(': ')[1])));
+  const ck = el('label', 'ck'), box = el('input'); box.type = 'checkbox'; box.checked = d.onlyChanged; box.onchange = () => { d.onlyChanged = box.checked; };
+  ck.append(box, el('span', '', 'Set quantity 1 on new and changed boxes, 0 on the rest, so the next set prints only what changed'));
+  const tools = el('div', 'tools'), go = button('key go', 'Update list', () => {
+    const before = { boxes: JSON.parse(JSON.stringify(S.boxes)), groups: JSON.parse(JSON.stringify(S.groups)), examples: S.examples };
+    const r = applyToolCtrl(S.examples ? [] : S.boxes, pl, { onlyChanged: d.onlyChanged });
+    Object.assign(S, { boxes: c.withKeys(r.boxes), groups: r.groups, panel: null, plan: null, tcChanged: false, tcUndo: before });
+    S.sync = { ...S.sync, tcSha: d.sha }; writeJson(SYNC_KEY, S.sync);
+    renderPanel(); buildList(); changed(); S.tcUndo = before; refresh();
+  });
+  go.disabled = !pl.added.length && !pl.changed.length && !d.onlyChanged;
+  tools.append(go, button('key', 'Cancel', closePanel));
+  p.append(ck, tools);
+}
+
 // ---------- wiring ----------
 c.PROFILES.forEach((p) => { const o = el('option', '', `${p.fits} · ${p.status}`); o.value = p.id; $('profile').append(o); });
 { const o = el('option', '', 'Custom size'); o.value = 'custom'; $('profile').append(o); }
@@ -783,6 +1047,10 @@ $('openFile').onclick = () => $('file').click();
 $('file').onchange = (e) => { openFile(e.target.files[0]); e.target.value = ''; };
 $('exportList').onclick = exportList;
 $('exportCsv').onclick = exportCsv;
+$('ghConnect').onclick = () => (S.panel === 'connect' ? closePanel() : openPanel('connect'));
+$('ghSync').onclick = () => { S.syncErr = null; syncNow(); };
+$('ghTool').onclick = getBoxes;
+$('ghOff').onclick = disconnect;
 $('noticesRead').onchange = () => setNotices(true);
 $('showNotices').onclick = () => setNotices(false);
 showNotices();
@@ -802,5 +1070,6 @@ document.querySelectorAll('[data-theme-set]').forEach((b) => b.addEventListener(
 addEventListener('resize', () => { clearTimeout(sheetTimer); sheetTimer = setTimeout(() => refresh(true), 120); });
 
 restore(); syncInputs(); buildList(); refresh();
+if (S.gh) syncNow(); // BX-R149: sync when the app opens
 Promise.all(['400 16px Inter', '700 16px Inter'].map((f) => document.fonts.load(f, 'A→↔·'))).then(() => refresh(true)).catch(() => {});
 if (location.hash === '#tutorial') { history.replaceState(null, '', location.pathname); startTour(); }

@@ -22,7 +22,7 @@
   <div class="brand">
     <h1>Box Ctrl</h1>
     <span class="by">User guide</span>
-    <span class="by mono">· x0.1.1</span>
+    <span class="by mono">· x0.1.2</span>
   </div>
   <div class="leds">
     <a href="index.html" class="guidelink">Back to Box Ctrl</a>
@@ -53,6 +53,7 @@
     <a href="#logos">Logos and names</a>
     <a href="#tools">Standard tools</a>
     <a href="#keep">Keeping your list</a>
+    <a href="#github">Your list on GitHub</a>
     <a href="#sets">Printing a second set</a>
     <a href="#errors">Errors and fixes</a>
     <a href="#privacy">Privacy</a>
@@ -66,12 +67,20 @@
     <section id="liene"><h2>Printing on the Liene</h2><ol><li>Press Save sheets and open a sheet in the Liene Mac app.</li><li>Keep the lock on. Type W 90.0, H 170.0, X 0.0, Y 0.0.</li><li>Set cutting mode to Separate, and Border to match Cut border in Label Print.</li><li>Leave AI remove background off, then print on Liene 4 × 7 sticker paper.</li></ol><p class="small">Only tested on the Liene PixCut S1, with the Liene Photo Mac app.</p></section>
     <section id="office"><h2>Printing on an office printer</h2><ol><li>Choose Office printer in Label Print, and pick Letter or A4.</li><li>Press Print. Your browser's print dialog opens.</li><li>Set Scale to 100 %, and use card stock. For Systainer cards, 135 gsm or heavier.</li><li>Check that the line on the page measures 50 mm.</li><li>Trim on the crop marks.</li></ol></section>
     <section id="owner"><h2>Owner line</h2><p>The owner line prints bottom left of every label, up to three lines. Press Return for a new line. A phone number or address helps a box find its way home if it gets left behind, but it shows to anyone who sees the box, and it stays in any backup you export. Long, thin labels leave the owner line off.</p></section>
-    <section id="logos"><h2>Logos and names</h2><p>Only add a logo you own or have permission to use. Box Ctrl asks you to confirm that each time you add one. You're responsible for how you use it, and for the names you print. Box Ctrl doesn't check logos, doesn't keep a copy, and takes no responsibility for your use of one.</p><p>Standard tools list product names so you can find your tool. Those names belong to their makers. Check each one against your tool.</p></section>
+    <section id="logos"><h2>Logos and names</h2><p>Only add a logo you own or have permission to use. Box Ctrl asks you to confirm that each time you add one. You're responsible for how you use it, and for the names you print. Box Ctrl doesn't check logos. It keeps the logo in this browser, and in your own GitHub repo if you connect one, and takes no responsibility for your use of it.</p><p>Standard tools list product names so you can find your tool. Those names belong to their makers. Check each one against your tool.</p></section>
     <section id="tools"><h2>Standard tools from manufacturers</h2><p>Tools from Festool, Milwaukee, DEWALT, Bosch and Makita are already loaded, so you don't have to type them. Press Add standard tools, pick a maker, and pick your tools. Each one adds a box in that maker's group, ready to edit. The magnifier on a row fills in that one box.</p></section>
-    <section id="keep"><h2>Keeping your list</h2><p>There are no accounts. Your list saves in this browser, on this computer, and clearing browser data removes it. So keep a copy.</p><p><b>Export spreadsheet</b> saves a .csv you can open in Excel, Numbers or Google Sheets. Add your own columns, such as Location or Purchase date. Box Ctrl keeps them with each box, never prints them, and puts them back when you export. To bring it back, press Open file.</p><p><b>Export backup</b> saves everything, including your logo and group colours, as a .json file.</p></section>
+    <section id="keep"><h2>Keeping your list</h2><p>There are no accounts. Your list saves in this browser, on this computer, and clearing browser data removes it. Keep a copy with Export backup, or connect your own private GitHub repo, which keeps one for you.</p><p><b>Export spreadsheet</b> saves a .csv you can open in Excel, Numbers or Google Sheets. Add your own columns, such as Location or Purchase date. Box Ctrl keeps them with each box, never prints them, and puts them back when you export. To bring it back, press Open file.</p><p><b>Export backup</b> saves everything, including your logo and group colours, as a .json file.</p></section>
     <section id="sets"><h2>Printing a second set</h2><p>Already printed some? Set Start numbering at to the next number in Template Design, then add your new boxes. If they're on the same list, set Quantity to 0 on the boxes you've already printed.</p></section>
     <section id="errors"><h2>Errors and fixes</h2><p>The name is small: shorten it.</p><p>Left off at this size: the label is too small for everything. Shorten the text, or pick a bigger size.</p><p>That file has no Name column: start from the template.</p><p>An older or protected Excel file: save it as .xlsx or .csv.</p><p>This browser isn't keeping your list: use Export backup before you close.</p></section>
-    <section id="privacy"><h2>Privacy</h2><p>Box Ctrl makes no network requests and has no analytics. Your list, spreadsheets and logo stay on this device.</p></section>
+    <section id="github"><h2>Your list on GitHub</h2><p>You can keep your list in your own private GitHub repo, so every browser you connect has it, with a history of every change. It's optional. Box Ctrl works fully without it, and this browser stays the working copy.</p>
+      <ol><li>On GitHub, make a new private repo, such as <span class="mono">ctrl-data</span>. Keep it private: it holds your logo and owner line.</li>
+      <li>Make a fine-grained personal access token for that one repo, with Contents set to read and write and nothing else. Tool Ctrl uses the same repo and token, so make it once.</li>
+      <li>In Label Information, press Connect to GitHub and enter the repo as owner/name and the token. If Tool Ctrl is already connected in this browser, press Use Tool Ctrl's repo instead.</li></ol>
+      <p>Box Ctrl writes <span class="mono">box-ctrl.json</span>, and <span class="mono">box-ctrl-logo.png</span> when you've added a logo, beside Tool Ctrl's <span class="mono">tool-ctrl.json</span>. Every change saves here at once and goes to GitHub a few seconds later, as one commit. Offline, changes wait here and go when you're back. If two devices change the same thing, Box Ctrl shows both and asks which to keep.</p>
+      <p>The token stays in this browser only, never in a file or link. Every WOODWERD tool runs from woodwerd.github.io, so Tool Ctrl and Box Ctrl can share it in the same browser. That's why it should reach only that one private repo. Disconnect deletes it here.</p>
+      <p>A logo goes to the repo as its own file. Removing it deletes the file, but older commits still hold it. Deleting the repo is the only way to remove it for good. Another device asks you to confirm the logo once before using it.</p>
+      <p><b>Get boxes from Tool Ctrl</b> reads Tool Ctrl's record from the same repo and shows what's new and changed before anything changes. Only IDs, names, kinds, contents, groups and icons come across, never warranty details, locations or notes. Boxes Tool Ctrl doesn't have stay on your list. Without GitHub, use Tool Ctrl's Export for Box Ctrl and Open file here.</p></section>
+    <section id="privacy"><h2>Privacy</h2><p>Box Ctrl has no analytics. Unless you connect your own GitHub repo, it makes no network requests, and your list, spreadsheets and logo stay on this device. Once connected, it talks only to api.github.com, only for that repo, and sends your list and logo there. Spreadsheets you open are never sent. Keep the repo private.</p></section>
   </div>
 </div>
 

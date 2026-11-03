@@ -16,7 +16,7 @@ Pick your box, add your logo, list what's in each box, and print.
 - **Works with your spreadsheet.** Open Excel or CSV files, see what will be added before anything changes, and export back out. Your own columns stay with each box.
 - **Two ways to print.** Sheets for the Liene PixCut S1 with the exact settings, or pages with crop marks for an office printer.
 - **A tutorial.** Builds a sample set of labels with you, and leaves your list alone.
-- **Private.** No network requests, no analytics, no account. Your list and logo stay on your device.
+- **Private.** No analytics, no account. Your list and logo stay on your device, unless you connect your own private GitHub repo to keep them in sync.
 - Light and dark themes. Installs as a web app and works offline.
 
 ## Run it yourself
