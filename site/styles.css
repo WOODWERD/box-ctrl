@@ -182,7 +182,8 @@ textarea.in{height:auto;padding:5px 8px;line-height:1.5;resize:none;display:bloc
 .wwmark{height:34px;width:auto;display:block;fill:currentColor;opacity:.9}
 .tagline{font-weight:600;font-size:var(--t-micro);letter-spacing:.22em;text-transform:uppercase;color:var(--soft)}
 
-.lic{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1;stroke-linecap:square;stroke-linejoin:miter;display:block;flex:none}
+.lic{width:21px;height:21px;fill:currentColor;stroke:none;display:block;flex:none}
+.lic.none{fill:none;stroke:currentColor;stroke-width:1}
 .drop{border:1px dashed var(--strong);border-radius:8px;padding:13px;display:flex;flex-wrap:wrap;gap:8px 13px;align-items:center;justify-content:space-between;font-size:var(--t-cap);color:var(--soft)}
 .drop.over{border-color:var(--accent);background:var(--accent-tint)}
 .icons{display:flex;flex-direction:column;gap:13px;max-height:377px;overflow:auto}

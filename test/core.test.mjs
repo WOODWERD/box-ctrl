@@ -3,7 +3,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, existsSync } from 'node:fs';
 import * as c from '../site/core.js';
-import { ICONS, searchIcons } from '../site/icons.js';
+import { ICONS, FALLBACK, searchIcons } from '../site/icons.js';
 import { CATALOG, BRANDS, searchCatalog } from '../site/catalog.js';
 
 const near = (a, b, e = 0.01) => assert.ok(Math.abs(a - b) <= e, `${a} is not near ${b}`);
@@ -129,14 +129,21 @@ test('BX-A59 a list with a new logo needs the acknowledgement', () => {
   assert.equal(c.newLogo(a, b), true); assert.equal(c.newLogo(a, a), false); assert.equal(c.newLogo(a, { kind: 'none' }), false);
 });
 
-test('BX-A28 the library has 96 icons drawn to the grid', () => {
-  assert.equal(Object.keys(ICONS).length, 96);
-  Object.values(ICONS).forEach((i) => assert.match(i.d, /^[Mm]/, i.key));
+test('BX-A28 the library is the Icon Ctrl set: 123 filled icons, every old key kept', () => {
+  assert.equal(Object.keys(ICONS).length, 123);
+  Object.values(ICONS).forEach((i) => { assert.match(i.f, /^M/, i.key); assert.equal(i.d, '', i.key); });
+  ['router', 'sander', 'drill', 'joiner', 'kit', 'tool-bag', 'measure', 'hardware'].forEach((k) => assert.ok(ICONS[k], k));
+});
+
+test('BX-R55 an unknown variant falls back to its family', () => {
+  assert.equal(FALLBACK['sander-geared'], 'sander');
+  assert.equal(FALLBACK['wrench-combo'], 'wrench');
 });
 
 test('BX-A29 search by plain words', () => {
   assert.ok(searchIcons('biscuit').some((i) => i.key === 'joiner'));
-  assert.ok(searchIcons('domino').some((i) => i.key === 'joiner'));
+  assert.ok(searchIcons('tenon').some((i) => i.key === 'joiner'));
+  assert.ok(!searchIcons('domino').length);
 });
 
 test('BX-A33 a short name prints at 19 pt', () => near(c.layout(box(), 80, 52, 1.5, em).s1 / c.PT, 19, 0.01));

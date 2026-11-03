@@ -1,5 +1,5 @@
 // Box Ctrl rules. No page code here: everything in this file is tested by BX-A ID.
-import { ICONS } from './icons.js';
+import { ICONS, FALLBACK } from './icons.js';
 import { qrcode } from './vendor/qrcode.mjs';
 
 export const PHI = 1.6180339887;
@@ -341,6 +341,7 @@ export function readTable(table) {
     const qty = q === '' ? 1 : Number(q);
     if (!Number.isInteger(qty) || qty < 0 || qty > 99) return skipped.push(`Row ${n}: Quantity must be a whole number from 0 to 99.`);
     let icon = get(ci).toLowerCase();
+    if (icon && !ICONS[icon] && ICONS[FALLBACK[icon]]) icon = FALLBACK[icon];
     if (icon && !ICONS[icon]) { iconNotes.push(`Row ${n}: no icon called ${icon}, so it has none.`); icon = ''; }
     const extra = {};
     keptAt.forEach((k) => { const v = String(r[k] ?? ''); if (v !== '') extra[raw[k]] = v; });

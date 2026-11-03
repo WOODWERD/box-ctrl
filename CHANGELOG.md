@@ -2,6 +2,13 @@
 
 What changed in each version of [Box Ctrl](https://woodwerd.github.io/box-ctrl/), newest first. Versions are x-numbers while Box Ctrl is a public beta.
 
+## x0.1.7 · 2026-11-03
+- New icons: 123 solid silhouettes from Icon Ctrl replace the line icons. Every icon your lists already use keeps its name, so labels update by themselves.
+- 27 new icons, including gear-driven and linear sanders, three extractors, stick batteries, trim and edge routers, wrench, screwdriver and pliers variants, a mallet, a quick clamp, saws, and shop places from bench to van.
+- An icon name this version doesn't know shows its family's icon, such as a sander variant showing the sander.
+- Search by plain words. Trademarked product names are no longer search words, so search biscuit or tenon to find the joiner.
+- The user guide has a new Icons section, with a note on what the icons are and aren't.
+
 ## x0.1.6 · 2026-11-03
 - QR codes on labels. Each label with a box ID gets a small code that opens that box in [Tool Ctrl](https://woodwerd.github.io/tool-ctrl/). The code holds only the link, nothing else.
 - On a card the code sits at the left of the white footer. On a long strip it leads the label on its own white square. A label too small for a code that scans leaves it off and says so.

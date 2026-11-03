@@ -13,7 +13,7 @@ const X_ICON = '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="
 const PLUS_ICON = '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>';
 const POINTER = '<svg class="ic solid" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5l10 7-10 7Z"/></svg>';
 const SEARCH_ICON = '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.500" cy="10.500" r="6"/><path d="M15 15l5 5"/></svg>';
-const iconSvg = (key) => { const i = ICONS[key]; return i ? `<svg class="lic" viewBox="0 0 24 24" aria-hidden="true"><path d="${i.d}"${i.rot ? ` transform="rotate(${i.rot} 12 12)"` : ''}/></svg>` : '<svg class="lic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5l14 14"/></svg>'; };
+const iconSvg = (key) => { const i = ICONS[key]; return i ? `<svg class="lic" viewBox="0 0 24 24" aria-hidden="true"><path fill-rule="evenodd" d="${i.f}"/></svg>` : '<svg class="lic none" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5l14 14"/></svg>'; };
 
 const start = () => ({
   profile: c.PROFILES[0].id, custom: { W: 120, H: 25 }, owner: '', qr: true, prefix: 'BOX-', startNo: 1, extraCols: [], groups: c.startGroups(), boxes: c.exampleBoxes(), inputs: { ...c.DEFAULTS }, route: 'liene', paper: 'letter', sel: 0,
@@ -87,8 +87,7 @@ function text(ctx, t, x, y, size, weight, colour, spacing = 0, align = 'left') {
 function drawIcon(ctx, key, x, y, size, colour) {
   const i = ICONS[key]; if (!i) return;
   ctx.save(); ctx.translate(x, y); ctx.scale(size / 24, size / 24);
-  if (i.rot) { ctx.translate(12, 12); ctx.rotate(i.rot * Math.PI / 180); ctx.translate(-12, -12); }
-  ctx.lineWidth = 1; ctx.lineCap = 'square'; ctx.lineJoin = 'miter'; ctx.miterLimit = 4; ctx.strokeStyle = colour; ctx.stroke(new Path2D(i.d)); ctx.restore();
+  ctx.fillStyle = colour; ctx.fill(new Path2D(i.f), 'evenodd'); ctx.restore();
 }
 
 function drawMark(ctx, m, l, ox, oy, k) {
@@ -345,7 +344,7 @@ function iconsPanel(p) {
   const t = S.plan, box = t.target === 'box' ? S.boxes[t.index] : null, current = box ? box.icon : S.iconMark;
   p.setAttribute('aria-label', 'Icon library');
   p.append(el('h3', '', box ? `Choose an icon for ${box.id || `box ${t.index + 1}`}` : 'Choose an icon for your mark'));
-  const q = el('input', 'in'); q.placeholder = 'Search icons, such as domino or sander'; q.setAttribute('aria-label', 'Search icons');
+  const q = el('input', 'in'); q.placeholder = 'Search icons, such as biscuit or sander'; q.setAttribute('aria-label', 'Search icons');
   const out = el('div', 'icons');
   const pick = (key) => { if (box) box.icon = key; else S.iconMark = key; S.panel = null; S.plan = null; renderPanel(); buildList(); changed(); };
   const cell = (key, label) => { const b = el('button', 'icb'); b.type = 'button'; b.innerHTML = iconSvg(key); b.append(el('span', '', label)); b.setAttribute('aria-pressed', String(key === current)); b.onclick = () => pick(key); return b; };
