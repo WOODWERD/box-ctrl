@@ -1,5 +1,6 @@
 // Box Ctrl rules. No page code here: everything in this file is tested by BX-A ID.
 import { ICONS } from './icons.js';
+import { qrcode } from './vendor/qrcode.mjs';
 
 export const PHI = 1.6180339887;
 export const PT = 0.3528;
@@ -113,7 +114,7 @@ export const exampleBoxes = () => [
 // The tutorial's sample list (BX-R122)
 export const SAMPLE_LOGO = { kind: 'img', src: 'woodwerd-sample-logo.png', file: 'woodwerd-sample-logo.png', w: 640, h: 296, sample: true };
 export const sampleState = () => ({
-  profile: 'sys-standard', custom: { W: 120, H: 25 }, mark: { ...SAMPLE_LOGO }, owner: 'Property of WOODWERD', prefix: 'BOX-', startNo: 1, extraCols: [],
+  profile: 'sys-standard', custom: { W: 120, H: 25 }, mark: { ...SAMPLE_LOGO }, owner: 'Property of WOODWERD', qr: true, prefix: 'BOX-', startNo: 1, extraCols: [],
   groups: startGroups(), boxes: exampleBoxes().filter((b) => ['BOX-001', 'BOX-002', 'BOX-005'].includes(b.id)), inputs: { ...DEFAULTS }, route: 'liene', paper: 'letter', sel: 0,
 });
 
@@ -158,14 +159,34 @@ export const fixSymbols = (t) => SHORT.reduce((s, [re, ch]) => s.replace(re, ch)
 export const clipOwner = (v) => String(v ?? '').split(/\r?\n/).slice(0, OWNER_LINES).map((t) => t.slice(0, LIMITS.owner)).join('\n');
 export const ownerLines = (v) => clipOwner(v).split('\n').map((t) => t.trim()).filter(Boolean);
 
-export function layout(box, stickerW, stickerH, B, measure, hasMark = false, owner = '') {
+// ---------- QR codes (BX-R168 to BX-R176) ----------
+// The code holds only the link to the box in Tool Ctrl, error correction M, the smallest version that holds it.
+// Each module is 4 print pixels at 300 dpi, with a 2-module quiet zone.
+export const QR_BASE = 'https://woodwerd.github.io/tool-ctrl/#';
+export const QR_MOD = 4 / 300 * 25.4, QR_QUIET = 2;
+export const qrLink = (id) => QR_BASE + encodeURIComponent(String(id || '').trim());
+const qrCache = new Map();
+export function qrMatrix(id) {
+  const link = qrLink(id);
+  if (!qrCache.has(link)) {
+    const q = qrcode(0, 'M'); q.addData(link); q.make();
+    const n = q.getModuleCount(), rows = [];
+    for (let r = 0; r < n; r++) { const row = []; for (let col = 0; col < n; col++) row.push(q.isDark(r, col)); rows.push(row); }
+    if (qrCache.size > 600) qrCache.clear();
+    qrCache.set(link, { link, n, rows });
+  }
+  return qrCache.get(link);
+}
+
+export function layout(box, stickerW, stickerH, B, measure, hasMark = false, owner = '', qrOn = false) {
   const A = stickerW - 2 * B, C = stickerH - 2 * B, s = Math.min(1, C / 49), inset = Math.max(1.5, 4 * s), strip = A / C >= 2.2;
   const x0 = B, y0 = B, name = String(box.name || '').toUpperCase(), kind = String(box.kind || '').toUpperCase();
   const widthAt = (t, w, ls) => measure(t, w) + ls * t.length;
   const fit = (t, w, max, room, ls = 0) => Math.min(max, room / (widthAt(t, w, ls) || 1));
   const iconKey = box.icon && ICONS[box.icon] ? box.icon : '';
-  const out = { A, C, s, inset, strip, x0, y0, name, kind, contents: [], dropped: [], small: [] };
+  const out = { A, C, s, inset, strip, x0, y0, name, kind, contents: [], dropped: [], small: [], qr: null };
   const own = ownerLines(owner).map((t) => t.toUpperCase());
+  const id = String(box.id || '').trim(), code = qrOn && id ? qrMatrix(id) : null, side = code ? (code.n + 2 * QR_QUIET) * QR_MOD : 0;
 
   if (!strip) {
     const bh = C / PHI, fh = C - bh, iconCol = A / (PHI * PHI), room = (iconKey ? A - iconCol : A) - 1.5 * inset;
@@ -180,32 +201,73 @@ export function layout(box, stickerW, stickerH, B, measure, hasMark = false, own
     const top = y0 + (bh - block()) / 2, y1 = top + s1 * cap, y2 = y1 + (kind ? gap + s2 * cap : 0);
     let y = y2 + gap * 0.8 + s3 * cap;
     [c1, c2].filter(Boolean).forEach((t) => { out.contents.push({ t, y }); y += lead; });
-    const ib = 22.7 * s, s4 = 5.5 * PT * s, mid = y0 + bh + fh / 2, slotH = fh / PHI, slotW = 27 * s, pitch = s4 * 1.5;
-    const ownRoom = A - 2 * inset - (hasMark ? slotW + inset / 2 : 0), ownSize = Math.min(s4, ...own.map((t) => fit(t, 400, s4, ownRoom, 0.08)));
-    const ownTop = mid + s4 * 0.5 - own.length * pitch / 2;
+    const ib = 22.7 * s, slotH = fh / PHI, slotW = 27 * s, foot = { x: x0, y: y0 + bh, w: A, h: fh };
+    const slot = { x: x0 + A - inset - slotW, y: y0 + bh + (fh - slotH) / 2, w: slotW, h: slotH };
+    // The code sits at the footer's left on the bottom inset, at least 1.5 under the band (BX-R172), or drops (BX-R174)
+    if (code && side <= fh - inset - 1.5) out.qr = { x: x0 + inset, y: y0 + C - inset - side, side, mod: QR_MOD, n: code.n, rows: code.rows, link: code.link };
+    else if (code) out.dropped.push('QR code');
+    const fx = out.qr ? out.qr.x + side + inset : x0 + inset, right = hasMark ? slot.x - inset / 2 : x0 + A - inset;
+    Object.assign(out, footerText(own, id, fx, right - fx, foot, s, inset, measure));
     Object.assign(out, {
-      band: { x: x0, y: y0, w: A, h: bh }, foot: { x: x0, y: y0 + bh, w: A, h: fh }, tx: x0 + inset, s1, s2, s3, y1, y2,
-      icon: iconKey ? { key: iconKey, x: x0 + A - iconCol + (iconCol - ib) / 2, y: y0 + (bh - ib) / 2, size: ib } : null,
-      s4, fx: x0 + inset, ownSize, owner: own.map((t, i) => ({ t, y: ownTop + i * pitch })), y6: own.length ? ownTop + own.length * pitch : mid + s4 * 0.36,
-      slot: { x: x0 + A - inset - slotW, y: y0 + bh + (fh - slotH) / 2, w: slotW, h: slotH },
+      band: { x: x0, y: y0, w: A, h: bh }, foot, tx: x0 + inset, s1, s2, s3, y1, y2,
+      icon: iconKey ? { key: iconKey, x: x0 + A - iconCol + (iconCol - ib) / 2, y: y0 + (bh - ib) / 2, size: ib } : null, fx, slot,
     });
   } else {
-    const bw = A / PHI, ib = C - 2 * inset, showIcon = !!iconKey && bw >= 3 * C, room = (showIcon ? bw - ib - inset : bw) - 2 * inset;
+    // A long strip leads with the code on its own white square, full height, before the band (BX-R173).
+    // The quiet zone is white, so it may share the inset; the dark modules stay inside it.
+    const pad = Math.max(inset, QR_QUIET * QR_MOD), dark = code ? code.n * QR_MOD : 0, fits = code && dark + 2 * pad <= C, tile = fits ? dark + 2 * pad : 0;
+    const A2 = A - tile, bx = x0 + tile;
+    const bw = A2 / PHI, ib = C - 2 * inset, showIcon = !!iconKey && bw >= 3 * C, room = (showIcon ? bw - ib - inset : bw) - 2 * inset;
     const s1 = fit(name, 700, C * 0.36, room, 0.02), s2 = fit(kind, 700, C * 0.13, room, 0.06), gap = C * 0.09, cap = 0.73;
     const blk = s1 * cap + (kind ? gap + s2 * cap : 0), top = y0 + (C - blk) / 2, y1 = top + s1 * cap, y2 = y1 + gap + s2 * cap;
-    const s4 = Math.max(1.6, C * 0.1), fx = x0 + bw + inset, slotH = C - 2 * inset - s4 * 1.6;
+    const s4 = Math.max(1.6, C * 0.1), fx = bx + bw + inset, slotH = C - 2 * inset - s4 * 1.6;
     if (box.c1 || box.c2) out.dropped.push('contents');
+    if (fits) out.qr = { x: x0 + pad - QR_QUIET * QR_MOD, y: y0 + (C - dark) / 2 - QR_QUIET * QR_MOD, side: dark + 2 * QR_QUIET * QR_MOD, mod: QR_MOD, n: code.n, rows: code.rows, link: code.link };
+    else if (code) out.dropped.push('QR code');
     if (own.length) out.dropped.push('owner line');
     if (iconKey && !showIcon) out.dropped.push('icon');
+    const idSize = id ? Math.min(s4, (x0 + A - inset - fx) / ((measure(id, 700) + 0.06 * id.length) || 1)) : s4;
     Object.assign(out, {
-      band: { x: x0, y: y0, w: bw, h: C }, foot: { x: x0 + bw, y: y0, w: A - bw, h: C }, tx: x0 + inset, s1, s2, s3: 0, y1, y2,
-      icon: showIcon ? { key: iconKey, x: x0 + bw - inset - ib, y: y0 + inset, size: ib } : null,
-      s4, fx, y6: y0 + C - inset, owner: [], slot: { x: fx, y: y0 + inset, w: A - bw - 2 * inset, h: slotH },
+      band: { x: bx, y: y0, w: bw, h: C }, foot: { x: bx + bw, y: y0, w: A2 - bw, h: C }, tx: bx + inset, s1, s2, s3: 0, y1, y2,
+      icon: showIcon ? { key: iconKey, x: bx + bw - inset - ib, y: y0 + inset, size: ib } : null,
+      s4: idSize, fx, y6: y0 + C - inset, owner: [], ownSize: 0, slot: { x: fx, y: y0 + inset, w: A2 - bw - 2 * inset, h: slotH },
     });
+    if (id && idSize / PT < TEXT_FLOOR_PT) out.small.push('ID');
   }
   if (name && out.s1 / PT < Math.min(NAME_FLOOR_PT, 19 * s)) out.small.push('name');
   if (kind && out.s2 / PT < TEXT_FLOOR_PT) out.small.push('kind');
+  if (out.footSmall) { out.small.push(...out.footSmall); delete out.footSmall; }
   return out;
+}
+
+// Card footer text (BX-R177, BX-R178): the owner line 6.5 pt 600 caps, the ID 9 pt 700 under it, both black.
+// An owner line first shrinks, no lower than 5.5 pt, to stay on its line; past that it wraps by word at 6.5 pt.
+// Three printed lines at most. A line that still won't fit shrinks to fit and is flagged when under the floor.
+export function footerText(own, id, fx, col, foot, s, inset, measure) {
+  const full = 6.5 * PT * s, least = 5.5 * PT * s, idFull = 9 * PT * s, lsO = 0.08, lsI = 0.06, small = [];
+  const wide = (t, w, ls) => measure(t, w) + ls * t.length;
+  const longest = (lines) => Math.max(0, ...lines.map((t) => wide(t, 600, lsO)));
+  let lines = own, size = full;
+  if (own.length && longest(own) * full > col) {
+    if (longest(own) * least <= col) size = col / longest(own);
+    else {
+      const wrapped = [];
+      for (const line of own) {
+        let cur = '';
+        for (const w of line.split(/\s+/).filter(Boolean)) { const t = cur ? cur + ' ' + w : w; if (!cur || wide(t, 600, lsO) * full <= col) cur = t; else { wrapped.push(cur); cur = w; } }
+        if (cur) wrapped.push(cur);
+      }
+      if (wrapped.length <= OWNER_LINES && longest(wrapped) * full <= col) lines = wrapped;
+      else size = Math.max(0, col / (longest(own) || 1));
+    }
+  }
+  if (own.length && size / PT < TEXT_FLOOR_PT) small.push('owner line');
+  const idSize = id ? Math.min(idFull, col / (wide(id, 700, lsI) || 1)) : idFull;
+  if (id && idSize / PT < TEXT_FLOOR_PT) small.push('ID');
+  const cap = 0.73, lead = size * 1.2, gap = 1.2 * s, n = lines.length;
+  const h = (n ? size * cap + (n - 1) * lead + gap : 0) + idSize * cap, top = foot.y + (foot.h - h) / 2;
+  const owner = lines.map((t, i) => ({ t, y: top + size * cap + i * lead }));
+  return { owner, ownSize: size, s4: idSize, y6: top + h, col, footSmall: small };
 }
 
 // Where a mark sits in its slot, with its proportions kept (BX-R18)
@@ -386,7 +448,7 @@ export function readList(o) {
     profile: PROFILES.some((p) => p.id === o.profile) || o.profile === 'custom' ? o.profile : PROFILES[0].id,
     custom: { W: num(o.custom?.W, CUSTOM.W, 120), H: num(o.custom?.H, CUSTOM.H, 25) },
     extraCols: Array.isArray(o.extraCols) ? o.extraCols.map((h) => text(h, 200)).filter(Boolean).slice(0, 200) : [],
-    mark: readMark(o.mark), owner: clipOwner(o.owner), prefix: text(o.prefix, LIMITS.prefix) || 'BOX-', startNo: clampStart(o.startNo) || 1, groups,
+    mark: readMark(o.mark), owner: clipOwner(o.owner), qr: o.qr !== false, prefix: text(o.prefix, LIMITS.prefix) || 'BOX-', startNo: clampStart(o.startNo) || 1, groups,
     inputs: { B: num(i.B, INPUTS.B, DEFAULTS.B), G: num(i.G, INPUTS.G, DEFAULTS.G) },
     route: o.route === 'office' ? 'office' : 'liene', paper: o.paper === 'a4' ? 'a4' : 'letter',
     boxes: o.boxes.map((b) => ({
@@ -396,7 +458,7 @@ export function readList(o) {
     })),
   };
 }
-export const writeList = (s) => ({ version: 1, extraCols: s.extraCols || [], profile: s.profile, custom: s.custom, mark: s.mark, owner: s.owner, prefix: s.prefix, startNo: s.startNo || 1, groups: s.groups, inputs: s.inputs, route: s.route, paper: s.paper, boxes: s.boxes });
+export const writeList = (s) => ({ version: 1, extraCols: s.extraCols || [], profile: s.profile, custom: s.custom, mark: s.mark, owner: s.owner, qr: s.qr !== false, prefix: s.prefix, startNo: s.startNo || 1, groups: s.groups, inputs: s.inputs, route: s.route, paper: s.paper, boxes: s.boxes });
 
 // A list file needs the acknowledgement only when it brings a logo not already here (BX-R110)
 export const newLogo = (current, incoming) => incoming.kind === 'img' && !(current.kind === 'img' && current.src === incoming.src);
@@ -432,8 +494,8 @@ const stable = (v) => JSON.stringify(v, (k, x) => (x && typeof x === 'object' &&
 export const same = (a, b) => stable(a) === stable(b);
 const clone = (v) => JSON.parse(JSON.stringify(v));
 const byKey = (list, key) => new Map((list || []).map((x) => [x[key], x]));
-const SETTINGS = ['profile', 'custom', 'owner', 'prefix', 'startNo', 'inputs', 'route', 'paper', 'mark', 'extraCols'];
-const SETTING_NAMES = { profile: 'Box size', custom: 'Custom size', owner: 'Owner line', prefix: 'ID prefix', startNo: 'Start numbering at', inputs: 'Print settings', route: 'Print route', paper: 'Paper', mark: 'Your mark', extraCols: 'Kept columns' };
+const SETTINGS = ['profile', 'custom', 'owner', 'qr', 'prefix', 'startNo', 'inputs', 'route', 'paper', 'mark', 'extraCols'];
+const SETTING_NAMES = { profile: 'Box size', custom: 'Custom size', owner: 'Owner line', qr: 'QR codes', prefix: 'ID prefix', startNo: 'Start numbering at', inputs: 'Print settings', route: 'Print route', paper: 'Paper', mark: 'Your mark', extraCols: 'Kept columns' };
 const FIELD_NAMES = { id: 'ID', name: 'Name', kind: 'Kind', c1: 'Contents line 1', c2: 'Contents line 2', groupId: 'Group', icon: 'Icon', qty: 'Quantity', extra: 'Kept columns', color: 'Colour', text: 'Text colour' };
 const LISTS = [['boxes', 'k'], ['groups', 'id']];
 

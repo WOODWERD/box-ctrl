@@ -16,7 +16,7 @@ const SEARCH_ICON = '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><cir
 const iconSvg = (key) => { const i = ICONS[key]; return i ? `<svg class="lic" viewBox="0 0 24 24" aria-hidden="true"><path d="${i.d}"${i.rot ? ` transform="rotate(${i.rot} 12 12)"` : ''}/></svg>` : '<svg class="lic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5l14 14"/></svg>'; };
 
 const start = () => ({
-  profile: c.PROFILES[0].id, custom: { W: 120, H: 25 }, owner: '', prefix: 'BOX-', startNo: 1, extraCols: [], groups: c.startGroups(), boxes: c.exampleBoxes(), inputs: { ...c.DEFAULTS }, route: 'liene', paper: 'letter', sel: 0,
+  profile: c.PROFILES[0].id, custom: { W: 120, H: 25 }, owner: '', qr: true, prefix: 'BOX-', startNo: 1, extraCols: [], groups: c.startGroups(), boxes: c.exampleBoxes(), inputs: { ...c.DEFAULTS }, route: 'liene', paper: 'letter', sel: 0,
   markTab: 'up', logo: null, textMark: { text: '', frame: 'none' }, iconMark: '',
 });
 const S = { ...start(), examples: true, panel: null, plan: null, fileNote: '', logoNote: '', pending: null, pendingList: null, stored: true, saving: false, tour: null, tourSeen: false, catBrand: 'All' };
@@ -108,9 +108,25 @@ function drawMark(ctx, m, l, ox, oy, k) {
   }
 }
 
+// Draws a QR code with its quiet zone, its top-left at x, y. Each module is a whole number of device pixels,
+// lined up with the pixel grid, so it prints sharp: 4 px a module on a 300 dpi sheet (BX-R171).
+function drawQR(ctx, q, x, y, k) {
+  const m = ctx.getTransform(), px = Math.max(1, Math.round(q.mod * k)), quiet = (q.side * k - q.n * px) / 2;
+  const at = m.transformPoint(new DOMPoint(x + quiet, y + quiet)), snap = m.inverse().transformPoint(new DOMPoint(Math.round(at.x), Math.round(at.y)));
+  ctx.fillStyle = '#FFFFFF'; ctx.fillRect(x, y, q.side * k, q.side * k);
+  ctx.fillStyle = '#000000';
+  q.rows.forEach((row, r) => {
+    for (let c0 = 0; c0 < q.n; c0++) {
+      if (!row[c0]) continue;
+      let c1 = c0; while (c1 + 1 < q.n && row[c1 + 1]) c1++;
+      ctx.fillRect(snap.x + c0 * px, snap.y + r * px, (c1 - c0 + 1) * px, px); c0 = c1;
+    }
+  });
+}
+
 // Draws one label with its top-left at ox, oy. The artwork stops B short of the cut (BX-R10, BX-R70).
 function drawLabel(ctx, box, ox, oy, k) {
-  const size = c.profileSize(S), [W, H] = size.sticker, B = S.inputs.B, m = mark(), l = c.layout(box, W, H, B, measure, m.kind !== 'none', S.owner);
+  const size = c.profileSize(S), [W, H] = size.sticker, B = S.inputs.B, m = mark(), l = c.layout(box, W, H, B, measure, m.kind !== 'none', S.owner, S.qr !== false);
   const g = groupOf(box.groupId), ink = c.bandText(g), X = (v) => ox + v * k, Y = (v) => oy + v * k;
   ctx.fillStyle = '#FFFFFF'; ctx.fillRect(X(l.x0), Y(l.y0), l.A * k, l.C * k);
   ctx.fillStyle = g.color; ctx.fillRect(X(l.band.x), Y(l.band.y), l.band.w * k, l.band.h * k);
@@ -119,8 +135,9 @@ function drawLabel(ctx, box, ox, oy, k) {
   if (l.kind) text(ctx, l.kind, X(l.tx), Y(l.y2), l.s2 * k, 700, ink, 0.06);
   const cc = c.contentsColour(ink, g.color);
   l.contents.forEach((t) => text(ctx, t.t, X(l.tx), Y(t.y), l.s3 * k, 400, cc));
-  l.owner.forEach((t) => text(ctx, t.t, X(l.fx), Y(t.y), l.ownSize * k, 400, '#4A4A4A', 0.08));
-  if (box.id) text(ctx, box.id, X(l.fx), Y(l.y6), l.s4 * k, 700, '#4A4A4A', 0.08);
+  l.owner.forEach((t) => text(ctx, t.t, X(l.fx), Y(t.y), l.ownSize * k, 600, '#000000', 0.08));
+  if (box.id) text(ctx, box.id, X(l.fx), Y(l.y6), l.s4 * k, 700, '#000000', 0.06);
+  if (l.qr) drawQR(ctx, l.qr, X(l.qr.x), Y(l.qr.y), k);
   drawMark(ctx, m, l, ox, oy, k);
   return l;
 }
@@ -240,7 +257,7 @@ function boxNotes() {
   S.boxes.forEach((b, i) => {
     const notes = rows[i]?.querySelector('.strips'); if (!notes) return;
     notes.textContent = '';
-    const l = c.layout(b, W, H, S.inputs.B, measure, m.kind !== 'none', S.owner), id = b.id || `Box ${i + 1}`;
+    const l = c.layout(b, W, H, S.inputs.B, measure, m.kind !== 'none', S.owner, S.qr !== false), id = b.id || `Box ${i + 1}`;
     l.dropped.forEach((d) => dropped.add(d));
     if (!String(b.name).trim()) notes.append(el('span', 'small', 'No name, so this box makes no label.'));
     if (l.small.length && b.name) { flagged++; notes.append(strip('warn', 'Text too small', `${id}: the ${l.small[0]} is small at this label size. Shorten it.`)); }
@@ -394,7 +411,7 @@ function listPanel(p) {
   const tools = el('div', 'tools');
   tools.append(button('key go', 'Replace list', () => {
     const logo = c.newLogo(mark(), r.mark) ? r.mark : null, m = logo ? { kind: 'none' } : r.mark;
-    Object.assign(S, { profile: r.profile, custom: r.custom, owner: r.owner, prefix: r.prefix, startNo: r.startNo, extraCols: r.extraCols, groups: r.groups, inputs: r.inputs, route: r.route, paper: r.paper, boxes: r.boxes.length ? r.boxes : [c.blankBox(c.nextId([], r.prefix))], sel: 0, examples: false, panel: null, plan: null });
+    Object.assign(S, { profile: r.profile, custom: r.custom, owner: r.owner, qr: r.qr, prefix: r.prefix, startNo: r.startNo, extraCols: r.extraCols, groups: r.groups, inputs: r.inputs, route: r.route, paper: r.paper, boxes: r.boxes.length ? r.boxes : [c.blankBox(c.nextId([], r.prefix))], sel: 0, examples: false, panel: null, plan: null });
     if (!logo) applyMark(m); else { S.markTab = 'up'; S.logo = null; S.pending = { ...logo, white: false }; }
     syncInputs(); renderPanel(); buildList(); changed(); showLogoSpot();
   }), button('key', 'Cancel', closePanel));
@@ -563,7 +580,7 @@ const TOUR = [
   { area: 'a3Strips', target: 'routeSeg', title: 'Print', words: 'Liene PixCut gives you sheets of three, with the exact settings to type into the Liene app. Office printer gives you pages with crop marks, to print on card stock and trim. Try both.' },
 ];
 function startTour() {
-  const keep = ['profile', 'custom', 'owner', 'prefix', 'startNo', 'extraCols', 'groups', 'boxes', 'inputs', 'route', 'paper', 'sel', 'markTab', 'logo', 'textMark', 'iconMark', 'examples'];
+  const keep = ['profile', 'custom', 'owner', 'qr', 'prefix', 'startNo', 'extraCols', 'groups', 'boxes', 'inputs', 'route', 'paper', 'sel', 'markTab', 'logo', 'textMark', 'iconMark', 'examples'];
   const saved = JSON.parse(JSON.stringify(Object.fromEntries(keep.map((k) => [k, S[k]]))));
   const sample = c.sampleState();
   Object.assign(S, sample, { markTab: 'up', logo: sample.mark, textMark: { text: '', frame: 'none' }, iconMark: '', examples: false, panel: null, plan: null, pending: null, logoNote: '', fileNote: '' });
@@ -759,7 +776,7 @@ function exportCsv() { download(new Blob([c.writeCsv(S)], { type: 'text/csv;char
 function exportList() { download(new Blob([JSON.stringify(c.writeList(listOf()), null, 2)], { type: 'application/json' }), c.listName()); }
 
 function syncInputs() {
-  $('customW').value = S.custom.W; $('customH').value = S.custom.H; $('owner').value = S.owner; $('prefix').value = S.prefix; $('startNo').value = S.startNo;
+  $('customW').value = S.custom.W; $('customH').value = S.custom.H; $('owner').value = S.owner; $('qr').checked = S.qr !== false; $('prefix').value = S.prefix; $('startNo').value = S.startNo;
   $('textMark').value = S.textMark.text; $('B').value = S.inputs.B; $('G').value = S.inputs.G;
   Object.keys(bad).forEach((k) => { bad[k] = ''; });
   ['customW', 'customH', 'B', 'G'].forEach((k) => $(k).classList.remove('bad'));
@@ -815,7 +832,7 @@ async function applySync(res, snap) {
 // Puts a list from GitHub into this browser. A logo this browser hasn't accepted waits on BX-S18 (BX-R152).
 async function fromDoc(d) {
   const before = c.docMark(mark());
-  Object.assign(S, { profile: d.profile, custom: d.custom, owner: d.owner, prefix: d.prefix, startNo: d.startNo, extraCols: d.extraCols, groups: d.groups, inputs: d.inputs, route: d.route, paper: d.paper, boxes: d.boxes.length ? d.boxes : [c.blankBox(c.nextId([], d.prefix))], examples: false });
+  Object.assign(S, { profile: d.profile, custom: d.custom, owner: d.owner, qr: d.qr, prefix: d.prefix, startNo: d.startNo, extraCols: d.extraCols, groups: d.groups, inputs: d.inputs, route: d.route, paper: d.paper, boxes: d.boxes.length ? d.boxes : [c.blankBox(c.nextId([], d.prefix))], examples: false });
   S.sel = Math.min(S.sel, S.boxes.length - 1);
   if (!c.same(before, d.mark)) {
     if (d.mark.kind !== 'img') applyMark(d.mark);
@@ -1023,6 +1040,7 @@ document.querySelectorAll('#frameSeg button').forEach((b) => { b.onclick = () =>
 document.querySelectorAll('#routeSeg button').forEach((b) => { b.onclick = () => { S.route = b.dataset.route; save(); refresh(); }; });
 document.querySelectorAll('#paperSeg button').forEach((b) => { b.onclick = () => { S.paper = b.dataset.paper; save(); refresh(); }; });
 $('textMark').oninput = () => { S.textMark.text = $('textMark').value; changed(); };
+$('qr').onchange = () => { S.qr = $('qr').checked; changed(); };
 $('owner').oninput = () => { const v = c.clipOwner($('owner').value); if (v !== $('owner').value) $('owner').value = v; S.owner = v; changed(); };
 $('prefix').oninput = () => { S.prefix = $('prefix').value; S.undoIds = null; save(); refresh(); };
 $('startNo').oninput = () => {

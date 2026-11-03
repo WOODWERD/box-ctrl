@@ -357,7 +357,8 @@ test('BX-A97 owner lines stack above the ID inside the footer', () => {
     assert.equal(one.owner.length, 1);
   }
   const l = c.layout(box(), 80, 52, 1.5, em, true, 'A'), mid = l.foot.y + l.foot.h / 2;
-  near(l.owner[0].y, mid - l.s4 * 0.25); near(l.y6, mid + l.s4 * 1.25);
+  // BX-R177: the owner line and ID stack as one block, centred in the footer
+  near(l.owner[0].y - l.ownSize * 0.73 - l.foot.y, l.foot.y + l.foot.h - l.y6); assert.ok(mid > l.owner[0].y && mid < l.y6);
 });
 test('BX-A98 only three lines of 32 characters are kept', () => {
   assert.equal(c.clipOwner('a\nb\nc\nd'), 'a\nb\nc');
@@ -370,7 +371,7 @@ test('BX-A99 a long owner line stops short of the mark', () => {
   const wide = (t) => t.length * 0.7, l = c.layout(box(), 80, 52, 1.5, wide, true, 'x'.repeat(32));
   assert.ok(l.ownSize < l.s4);
   assert.ok(l.fx + (wide('X'.repeat(32)) + 0.08 * 32) * l.ownSize <= l.slot.x);
-  near(c.layout(box(), 80, 52, 1.5, em, true, 'SHORT').ownSize, c.layout(box(), 80, 52, 1.5, em).s4);
+  near(c.layout(box(), 80, 52, 1.5, em, true, 'SHORT').ownSize / c.PT, 6.5);
 });
 test('BX-A100 owner lines survive export and reopening', () => {
   const s = { ...S({ boxes: [box()] }), custom: { W: 120, H: 25 }, mark: { kind: 'none' }, owner: 'Property of WOODWERD LLC\n512-555-0100', inputs: inputs(), route: 'liene', paper: 'letter' };
@@ -399,4 +400,64 @@ test('BX-A102 All tools matches the list in Cable Ctrl', () => {
 test('the repo holds no brand colour names', () => {
   const src = readFileSync(new URL('../site/core.js', import.meta.url), 'utf8');
   assert.doesNotMatch(src, /name: '(Festool|Milwaukee|DeWalt)/i);
+});
+
+// ---------- QR codes and footer type (x0.1.6) ----------
+const sys = (o = {}, owner = 'Property of your shop', qr = true) => c.layout(box({ id: 'WW-014', ...o }), 80, 52, 1.5, em, true, owner, qr);
+test('BX-A133 the standard card puts a 12.5 mm code at the footer\'s left, then the owner line and ID', () => {
+  const l = sys(), off = sys({}, 'Property of your shop', false), q = l.qr;
+  near(q.side, 12.53, 0.01); near(q.x, l.x0 + l.inset); near(q.y + q.side, l.y0 + l.C - l.inset);
+  assert.ok(q.y - (l.band.y + l.band.h) >= 1.5); near(q.y - (l.band.y + l.band.h), 2.19, 0.02);
+  near(l.fx, q.x + q.side + l.inset); assert.ok(l.fx + 25 < l.slot.x);
+  for (const k of ['s1', 's2', 'y1', 'y2']) near(l[k], off[k]); // nothing in the band moves
+  assert.deepEqual(l.dropped, []);
+});
+test('BX-R171 the code is 148 print pixels at 300 dpi, 4 a module', () => {
+  const q = sys().qr;
+  assert.equal(q.n, 33); assert.equal(Math.round(q.side / 25.4 * 300), 148); assert.equal(Math.round(q.mod / 25.4 * 300 * 1000) / 1000, 4);
+});
+test('BX-A135 a TSTAK strip leads with the code on white, before the band', () => {
+  const l = c.layout(box({ id: 'WW-014' }), 97, 19, 1.5, em, true, '', true);
+  assert.equal(l.strip, true); assert.ok(l.qr);
+  assert.ok(l.qr.x >= l.x0 && l.qr.y >= l.y0 && l.qr.y + l.qr.side <= l.y0 + l.C + 1e-9);
+  assert.ok(l.band.x >= l.qr.x + l.qr.side - 1e-9 && l.band.x > l.x0);
+  near(l.band.w, (l.A - (l.band.x - l.x0)) / c.PHI);
+});
+test('BX-A136 with codes off the footer starts at the inset, as before', () => {
+  const l = sys({}, 'A', false);
+  assert.equal(l.qr, null); near(l.fx, l.x0 + l.inset); assert.deepEqual(l.dropped, []);
+});
+test('BX-A137 the code holds only the link to the box', () => {
+  const q = c.qrMatrix('WW-014');
+  assert.equal(q.link, 'https://woodwerd.github.io/tool-ctrl/#WW-014'); assert.equal(q.n, 33);
+  assert.equal(sys().qr.link, q.link);
+  assert.equal(c.qrLink(' BOX 7 '), 'https://woodwerd.github.io/tool-ctrl/#BOX%207');
+});
+test('BX-E24 the S card drops the code, after the contents and before the owner line', () => {
+  const l = c.layout(box({ id: 'WW-014' }), 54, 35, 1.5, em, true, 'A', true);
+  assert.equal(l.qr, null); assert.ok(l.dropped.includes('QR code')); assert.equal(l.owner.length, 1);
+  const order = ['contents line 2', 'contents line 1', 'QR code'].filter((d) => l.dropped.includes(d));
+  assert.deepEqual(l.dropped.filter((d) => order.includes(d)), order);
+});
+test('BX-R169 a box with no ID never gets a code', () => {
+  const l = sys({ id: '' });
+  assert.equal(l.qr, null); assert.ok(!l.dropped.includes('QR code'));
+});
+test('BX-R177 the ID prints at 9 pt and the owner line at 6.5 pt', () => {
+  const l = sys({}, 'Short');
+  near(l.s4 / c.PT, 9); near(l.ownSize / c.PT, 6.5);
+});
+test('BX-R178 beside a code a long owner line wraps by word; without one it fits on a line', () => {
+  assert.deepEqual(sys().owner.map((o) => o.t), ['PROPERTY OF', 'YOUR SHOP']);
+  assert.deepEqual(sys({}, 'Property of your shop', false).owner.map((o) => o.t), ['PROPERTY OF YOUR SHOP']);
+  const l = sys({}, 'A\nB\nC');
+  assert.equal(l.owner.length, 3); assert.ok(l.y6 <= l.foot.y + l.foot.h); assert.ok(l.owner[0].y - l.ownSize * 0.73 >= l.foot.y);
+  const one = sys({}, 'Property of WW12'); // shrinks, not below 5.5 pt, to stay on its line first
+  assert.equal(one.owner.length, 1); assert.ok(one.ownSize / c.PT >= 5.5 && one.ownSize / c.PT < 6.5);
+});
+test('BX-R169 codes are on by default and the switch survives export', () => {
+  const s = { ...S({ boxes: [box()] }), custom: { W: 120, H: 25 }, mark: { kind: 'none' }, owner: '', inputs: inputs(), route: 'liene', paper: 'letter' };
+  assert.equal(c.readList(JSON.parse(JSON.stringify(c.writeList(s)))).qr, true);
+  assert.equal(c.readList(JSON.parse(JSON.stringify(c.writeList({ ...s, qr: false })))).qr, false);
+  assert.equal(c.sampleState().qr, true);
 });
