@@ -15,7 +15,7 @@ export const LIMITS = { id: 12, name: 20, kind: 28, c: 40, owner: 32, prefix: 8,
 
 // ---------- profiles (BX-R01 to BX-R03) ----------
 export const PROFILES = [
-  { id: 'sys-standard', name: 'Systainer standard card', fits: 'Fits Systainer standard card', sticker: [84, 54], card: [85.72, 54.03], status: 'Sticker measured, card published' },
+  { id: 'sys-standard', name: 'Systainer standard card', fits: 'Fits Systainer standard card', sticker: [80, 52], card: [80, 52], status: 'Measured' },
   { id: 'sys-s', name: 'Systainer³ S card', fits: 'Fits Systainer³ S card', sticker: [54, 35], card: [54, 35], status: 'Published, not test printed' },
   ...[['tstak', 'DEWALT TSTAK plate', 97, 19], ['packout-s', 'Milwaukee PACKOUT handle, short', 101.5, 18], ['packout-m', 'Milwaukee PACKOUT handle, medium', 117, 18], ['packout-l', 'Milwaukee PACKOUT handle, long', 150, 18]]
     .map(([id, name, w, h]) => ({ id, name, fits: `Fits ${name}, ${w} × ${h}`, sticker: [w, h], card: [w, h], status: 'Untested', untested: true })),
@@ -159,7 +159,7 @@ export const clipOwner = (v) => String(v ?? '').split(/\r?\n/).slice(0, OWNER_LI
 export const ownerLines = (v) => clipOwner(v).split('\n').map((t) => t.trim()).filter(Boolean);
 
 export function layout(box, stickerW, stickerH, B, measure, hasMark = false, owner = '') {
-  const A = stickerW - 2 * B, C = stickerH - 2 * B, s = Math.min(1, C / 51), inset = Math.max(1.5, 4 * s), strip = A / C >= 2.2;
+  const A = stickerW - 2 * B, C = stickerH - 2 * B, s = Math.min(1, C / 49), inset = Math.max(1.5, 4 * s), strip = A / C >= 2.2;
   const x0 = B, y0 = B, name = String(box.name || '').toUpperCase(), kind = String(box.kind || '').toUpperCase();
   const widthAt = (t, w, ls) => measure(t, w) + ls * t.length;
   const fit = (t, w, max, room, ls = 0) => Math.min(max, room / (widthAt(t, w, ls) || 1));

@@ -553,7 +553,7 @@ async function printOffice() {
 
 // ---------- tutorial (BX-R120 to BX-R129) ----------
 const TOUR = [
-  { area: 'a1Strips', target: 'hlBox', title: 'Pick the box size', words: 'Everything starts with the box. Pick yours here, or choose Custom size and measure the space the label sits in. We\'ve picked the Systainer standard card, 84 × 54 mm.' },
+  { area: 'a1Strips', target: 'hlBox', title: 'Pick the box size', words: 'Everything starts with the box. Pick yours here, or choose Custom size and measure the space the label sits in. We\'ve picked the Systainer standard card, 80 × 52 mm.' },
   { area: 'a1Strips', target: 'hlMark', title: 'Add a logo', words: "This is your mark. It prints bottom right on every label. We've added a sample logo here. For your own, press Choose logo file or drop it in, and Box Ctrl asks you to confirm you own it or have permission." },
   { area: 'a1Strips', target: 'hlOwner', title: 'Add an owner line', words: 'This prints bottom left on every label, so a box finds its way home. Try your own wording, or leave it blank.' },
   { area: 'a2Strips', target: 'boxes', title: 'Fill in a box', words: 'This part changes on each label. Type the name, kind and contents, and the icon button picks an icon. Open file brings in a whole spreadsheet.' },
@@ -641,7 +641,7 @@ function renderSheets() {
 function refresh(keepNote) {
   const size = c.profileSize(S), [W, H] = size.sticker, office = S.route === 'office', m = mark(), a1 = $('a1Strips'), a2 = $('a2Strips'), a3 = $('a3Strips');
   const inputBad = Object.keys(bad).filter((k) => bad[k]), notes = boxNotes(), cap = office ? officeCap() : lieneCap(), labels = c.labelList(S.boxes), total = labels.length;
-  const sheets = cap.n ? Math.ceil(total / cap.n) : 0, unit = office ? 'page' : 'sheet', s = Math.min(1, (H - 2 * S.inputs.B) / 51);
+  const sheets = cap.n ? Math.ceil(total / cap.n) : 0, unit = office ? 'page' : 'sheet', s = Math.min(1, (H - 2 * S.inputs.B) / 49);
 
   // Area 1
   a1.textContent = ''; a2.textContent = ''; a3.textContent = '';

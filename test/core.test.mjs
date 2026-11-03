@@ -13,28 +13,28 @@ const S = (o = {}) => ({ boxes: [], groups: c.startGroups(), prefix: 'BOX-', ...
 const inputs = (o = {}) => ({ ...c.DEFAULTS, ...o });
 
 test('BX-A01 artwork size', () => {
-  const l = c.layout(box(), 84, 54, 1.5, em);
-  near(l.A, 81); near(l.C, 51);
-  assert.equal(Math.round(l.A / 25.4 * 300), 957); assert.equal(Math.round(l.C / 25.4 * 300), 602);
+  const l = c.layout(box(), 80, 52, 1.5, em);
+  near(l.A, 77); near(l.C, 49);
+  assert.equal(Math.round(l.A / 25.4 * 300), 909); assert.equal(Math.round(l.C / 25.4 * 300), 579);
 });
 
 test('BX-A02 zones', () => {
-  const l = c.layout(box(), 84, 54, 1.5, em);
-  near(l.band.h, 31.52); near(l.foot.h, 19.48); assert.equal(l.strip, false);
-  near(l.A - (l.A - l.A / (c.PHI * c.PHI)), 30.94); near(l.slot.w, 27); near(l.slot.h, 12.04);
+  const l = c.layout(box(), 80, 52, 1.5, em);
+  near(l.band.h, 30.28); near(l.foot.h, 18.72); assert.equal(l.strip, false);
+  near(l.A - (l.A - l.A / (c.PHI * c.PHI)), 29.41); near(l.slot.w, 27); near(l.slot.h, 11.57);
 });
 
 test('BX-A03 long labels use the Strip shape', () => assert.equal(c.layout(box(), 150, 25, 1.5, em).strip, true));
 
 test('BX-A04 three labels per sheet at the defaults', () => {
-  const cap = c.lieneCapacity(84, 54, inputs());
+  const cap = c.lieneCapacity(80, 52, inputs());
   assert.equal(cap.n, 3); assert.equal(cap.rot, false);
 });
 
-test('BX-A05 two per sheet at 4 mm', () => assert.equal(c.lieneCapacity(84, 54, inputs({ G: 4 })).n, 2));
+test('BX-A05 two per sheet at 5.5 mm', () => assert.equal(c.lieneCapacity(80, 52, inputs({ G: 5.5 })).n, 2));
 
-test('BX-A07 office Letter holds 9, turned', () => { const o = c.officeCapacity(85.72, 54.03, 'letter'); assert.equal(o.n, 9); assert.equal(o.rot, true); });
-test('BX-A08 office A4 holds 10', () => assert.equal(c.officeCapacity(85.72, 54.03, 'a4').n, 10));
+test('BX-A07 office Letter holds 9, turned', () => { const o = c.officeCapacity(80, 52, 'letter'); assert.equal(o.n, 9); assert.equal(o.rot, true); });
+test('BX-A08 office A4 holds 10', () => assert.equal(c.officeCapacity(80, 52, 'a4').n, 10));
 
 test('BX-A09 file names use the local date', () => {
   const d = new Date(2026, 10, 1, 21, 0);
@@ -139,10 +139,10 @@ test('BX-A29 search by plain words', () => {
   assert.ok(searchIcons('domino').some((i) => i.key === 'joiner'));
 });
 
-test('BX-A33 a short name prints at 19 pt', () => near(c.layout(box(), 84, 54, 1.5, em).s1 / c.PT, 19, 0.01));
+test('BX-A33 a short name prints at 19 pt', () => near(c.layout(box(), 80, 52, 1.5, em).s1 / c.PT, 19, 0.01));
 
 test('BX-A34 a 20-character name fits its column', () => {
-  const l = c.layout(box({ name: 'X'.repeat(20) }), 84, 54, 1.5, em);
+  const l = c.layout(box({ name: 'X'.repeat(20) }), 80, 52, 1.5, em);
   assert.ok(l.s1 / c.PT >= 9); assert.ok(l.tx + l.s1 * (em(l.name) + 0.4) <= l.x0 + l.A - 30.94 + 0.01);
 });
 
@@ -334,14 +334,14 @@ test('the sample is three boxes on one sheet', () => {
 });
 
 test('BX-A97 owner lines stack above the ID inside the footer', () => {
-  for (const [W, H] of [[84, 54], [54, 35]]) {
+  for (const [W, H] of [[80, 52], [54, 35]]) {
     const one = c.layout(box(), W, H, 1.5, em, true, 'A'), three = c.layout(box(), W, H, 1.5, em, true, 'A\nB\nC'), foot = three.foot;
     assert.deepEqual(three.owner.map((l) => l.t), ['A', 'B', 'C']);
     assert.ok(three.owner[0].y - three.s4 * 0.73 > foot.y); assert.ok(three.y6 < foot.y + foot.h);
     assert.ok(three.owner[1].y > three.owner[0].y && three.y6 > three.owner[2].y);
     assert.equal(one.owner.length, 1);
   }
-  const l = c.layout(box(), 84, 54, 1.5, em, true, 'A'), mid = l.foot.y + l.foot.h / 2;
+  const l = c.layout(box(), 80, 52, 1.5, em, true, 'A'), mid = l.foot.y + l.foot.h / 2;
   near(l.owner[0].y, mid - l.s4 * 0.25); near(l.y6, mid + l.s4 * 1.25);
 });
 test('BX-A98 only three lines of 32 characters are kept', () => {
@@ -352,10 +352,10 @@ test('BX-A98 only three lines of 32 characters are kept', () => {
   assert.equal(c.readList({ version: 1, owner: 'a\nb\nc\nd', boxes: [box()] }).owner, 'a\nb\nc');
 });
 test('BX-A99 a long owner line stops short of the mark', () => {
-  const wide = (t) => t.length * 0.7, l = c.layout(box(), 84, 54, 1.5, wide, true, 'x'.repeat(32));
+  const wide = (t) => t.length * 0.7, l = c.layout(box(), 80, 52, 1.5, wide, true, 'x'.repeat(32));
   assert.ok(l.ownSize < l.s4);
   assert.ok(l.fx + (wide('X'.repeat(32)) + 0.08 * 32) * l.ownSize <= l.slot.x);
-  near(c.layout(box(), 84, 54, 1.5, em, true, 'SHORT').ownSize, c.layout(box(), 84, 54, 1.5, em).s4);
+  near(c.layout(box(), 80, 52, 1.5, em, true, 'SHORT').ownSize, c.layout(box(), 80, 52, 1.5, em).s4);
 });
 test('BX-A100 owner lines survive export and reopening', () => {
   const s = { ...S({ boxes: [box()] }), custom: { W: 120, H: 25 }, mark: { kind: 'none' }, owner: 'Property of WOODWERD LLC\n512-555-0100', inputs: inputs(), route: 'liene', paper: 'letter' };
