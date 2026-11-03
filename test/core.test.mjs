@@ -377,7 +377,7 @@ test('BX-A102 All tools matches the list in Cable Ctrl', () => {
   const html = readFileSync(new URL('../site/index.html', import.meta.url), 'utf8');
   const print = html.slice(html.indexOf('<h2>Print'), html.indexOf('<h2>Track'));
   assert.deepEqual([...print.matchAll(/<b>(?:<a [^>]*>)?([^<]+)/g)].map((m) => m[1]), ['Cable Ctrl', 'File Ctrl', 'Box Ctrl']);
-  assert.match(html, /<h2>Track <em>— no board needed<\/em><\/h2>\s*<ul>\s*<li class="soon"><b>Tool Ctrl<\/b> <span class="tag">In progress/);
+  assert.match(html, /<h2>Track <em>— no board needed<\/em><\/h2>\s*<ul>\s*<li><b><a href="https:\/\/woodwerd.github.io\/tool-ctrl\/">Tool Ctrl<\/a><\/b>/);
   assert.match(html, /<b>CtrlClock<\/b> <span class="tag">In progress/);
 });
 
