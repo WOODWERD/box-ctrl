@@ -129,8 +129,8 @@ test('BX-A59 a list with a new logo needs the acknowledgement', () => {
   assert.equal(c.newLogo(a, b), true); assert.equal(c.newLogo(a, a), false); assert.equal(c.newLogo(a, { kind: 'none' }), false);
 });
 
-test('BX-A28 the library has 52 icons drawn to the grid', () => {
-  assert.equal(Object.keys(ICONS).length, 52);
+test('BX-A28 the library has 96 icons drawn to the grid', () => {
+  assert.equal(Object.keys(ICONS).length, 96);
   Object.values(ICONS).forEach((i) => assert.match(i.d, /^[Mm]/, i.key));
 });
 
@@ -304,6 +304,21 @@ test('custom sizes turn on the sheet', () => {
 test('marks keep their proportions in the slot', () => {
   const m = c.fitMark({ x: 0, y: 0, w: 27, h: 12 }, 640, 296);
   near(m.w / m.h, 640 / 296); assert.ok(m.w <= 27 && m.h <= 12);
+});
+
+test('BX-A131 search matches word stems', () => {
+  assert.ok(searchIcons('oscillator').some((i) => i.key === 'multi-tool'));
+  const sanders = searchIcons('sanders').map((i) => i.key);
+  ['sander', 'orbital-sander', 'delta-sander', 'belt-sander', 'drywall-sander'].forEach((k) => assert.ok(sanders.includes(k), k));
+  assert.ok(searchIcons('press').some((i) => i.key === 'press-tool'));
+  assert.ok(searchCatalog('oscillator', 'Festool').some((e) => e.name === 'VECTURO OSC 18'));
+});
+
+test('BX-A132 catalog tools use their own icons', () => {
+  const icon = (b, n) => CATALOG.find((e) => e.brand === b && e.name === n).icon;
+  assert.deepEqual(['DTS 400', 'BS 75', 'MX 1200', 'CONTURO KA 65', 'FS 1400/2', 'KHC 18'].map((n) => icon('Festool', n)),
+    ['delta-sander', 'belt-sander', 'mixer', 'edge-bander', 'guide-rail', 'rotary-hammer']);
+  assert.equal(icon('Milwaukee', 'M18 FUEL ROTARY'), 'rotary-hammer');
 });
 
 test('BX-A54 every catalog entry is complete and clean', () => {
