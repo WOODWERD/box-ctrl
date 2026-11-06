@@ -2,6 +2,10 @@
 
 What changed in each version of [Box Ctrl](https://woodwerd.github.io/box-ctrl/), newest first. Versions are x-numbers while Box Ctrl is a public beta.
 
+## x0.1.8 · 2026-11-06
+- Set up GitHub has moved to the [WOODWERD Toolkit Guides](https://woodwerd.github.io/github.html), one page for every WOODWERD tool. The old address takes you there, to the same step.
+- The user guide's GitHub section now holds what's particular to Box Ctrl: the Connect panel, the sync states and what each means.
+
 ## x0.1.7 · 2026-11-03
 - New icons: 123 solid silhouettes from Icon Ctrl replace the line icons. Every icon your lists already use keeps its name, so labels update by themselves.
 - 27 new icons, including gear-driven and linear sanders, three extractors, stick batteries, trim and edge routers, wrench, screwdriver and pliers variants, a mallet, a quick clamp, saws, and shop places from bench to van.

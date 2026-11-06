@@ -1,7 +1,7 @@
 // Offline copy of the app. Online always gets the newest files; the saved copy is only the fallback (BX-E12).
 // no-cache makes the browser check with GitHub every time, so its own 10-minute copy can't hold back a new version.
 // All WOODWERD tools share one web address, so this clears only Box Ctrl's own old copies.
-const VERSION = 'box-ctrl-x0.1.7';
+const VERSION = 'box-ctrl-x0.1.8';
 const FILES = ['./', 'index.html', 'guide.html', 'github.html', 'img/github-connect.png', 'img/github-synced.png', 'tokens.css', 'styles.css', 'chrome.js', 'core.js', 'icons.js', 'catalog.js', 'app.js', 'github.js', 'sync.js', 'toolctrl.js', 'vendor/qrcode.mjs', 'manifest.webmanifest',
   'box-ctrl-template.xlsx', 'woodwerd-sample-logo.png', 'icon-192.png', 'icon-512.png', 'favicon.svg', 'favicon-32.png', 'apple-touch-icon.png', 'fonts/Inter-Regular.woff2', 'fonts/Inter-Medium.woff2', 'fonts/Inter-SemiBold.woff2',
   'fonts/Inter-Bold.woff2', 'fonts/jetbrains-mono-latin-400-normal.woff2', 'fonts/jetbrains-mono-latin-500-normal.woff2'];
