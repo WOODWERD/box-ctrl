@@ -161,7 +161,7 @@ textarea.in{height:auto;padding:5px 8px;line-height:1.5;resize:none;display:bloc
 #art1,#art2{display:block;width:100%;height:auto}
 .note{margin:0}
 .guide{display:grid;grid-template-columns:233px minmax(0,1fr);gap:34px;align-items:start}
-.guide nav{display:flex;flex-direction:column;border-top:1px solid var(--ink)}
+.guide nav{display:flex;flex-direction:column;border-top:1px solid var(--ink);position:sticky;top:13px}
 .guide nav a{padding:8px 0;border-bottom:1px solid var(--line);text-decoration:none;font-size:var(--t-cap)}
 .guide section{max-width:610px;display:flex;flex-direction:column;gap:8px;margin-bottom:34px;scroll-margin-top:21px}
 .guide h2{margin:0;font-size:var(--t-area);font-weight:600}
@@ -244,6 +244,7 @@ textarea.in{height:auto;padding:5px 8px;line-height:1.5;resize:none;display:bloc
   .tt .sws{grid-column:1/-1;grid-row:2;flex-wrap:wrap}
   .tt .count{display:none}
   .guide{grid-template-columns:minmax(0,1fr)}
+  .guide nav{position:static}
   .foot{padding-inline:0}
 }
 .kitactions{display:inline-flex;align-items:center;gap:8px}

@@ -2,6 +2,9 @@
 
 What changed in each version of [Box Ctrl](https://woodwerd.github.io/box-ctrl/), newest first. Versions are x-numbers while Box Ctrl is a public beta.
 
+## x0.1.9 · 2026-11-06
+- The user guide's menu stays in place as you scroll, like the other WOODWERD guides. On phones it stays at the top of the page.
+
 ## x0.1.8 · 2026-11-06
 - Set up GitHub has moved to the [WOODWERD Toolkit Guides](https://woodwerd.github.io/github.html), one page for every WOODWERD tool. The old address takes you there, to the same step.
 - The user guide's GitHub section now holds what's particular to Box Ctrl: the Connect panel, the sync states and what each means.
