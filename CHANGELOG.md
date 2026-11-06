@@ -2,6 +2,9 @@
 
 What changed in each version of [Box Ctrl](https://woodwerd.github.io/box-ctrl/), newest first. Versions are x-numbers while Box Ctrl is a public beta.
 
+## x0.1.10 · 2026-11-06
+- The guide's menu marks the section you're reading with an amber bar.
+
 ## x0.1.9 · 2026-11-06
 - The user guide's menu stays in place as you scroll, like the other WOODWERD guides. On phones it stays at the top of the page.
 
