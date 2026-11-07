@@ -2,6 +2,9 @@
 
 What changed in each version of [Box Ctrl](https://woodwerd.github.io/box-ctrl/), newest first. Versions are x-numbers while Box Ctrl is a public beta.
 
+## x0.1.11 · 2026-11-06
+- The icon library moves to Icon Ctrl's Print set x0.0.7: 151 icons, up from 123, in 14 groups. New are a large joiner, the Electronics bench (soldering iron, hot air station, dev board, breadboard and more), Desk things such as paper and a binder, an Everyday group with keys and a wallet, a cardboard box and a filament spool. Every icon your lists already use is unchanged.
+
 ## x0.1.10 · 2026-11-06
 - The guide's menu marks the section you're reading with an amber bar.
 

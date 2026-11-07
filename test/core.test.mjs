@@ -129,8 +129,8 @@ test('BX-A59 a list with a new logo needs the acknowledgement', () => {
   assert.equal(c.newLogo(a, b), true); assert.equal(c.newLogo(a, a), false); assert.equal(c.newLogo(a, { kind: 'none' }), false);
 });
 
-test('BX-A28 the library is the Icon Ctrl set: 123 filled icons, every old key kept', () => {
-  assert.equal(Object.keys(ICONS).length, 123);
+test('BX-A28 the library is the Icon Ctrl set: 151 filled icons, every old key kept', () => {
+  assert.equal(Object.keys(ICONS).length, 151);
   Object.values(ICONS).forEach((i) => { assert.match(i.f, /^M/, i.key); assert.equal(i.d, '', i.key); });
   ['router', 'sander', 'drill', 'joiner', 'kit', 'tool-bag', 'measure', 'hardware'].forEach((k) => assert.ok(ICONS[k], k));
 });
