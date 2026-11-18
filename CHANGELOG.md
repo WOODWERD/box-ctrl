@@ -2,6 +2,9 @@
 
 What changed in each version of [Box Ctrl](https://woodwerd.github.io/box-ctrl/), newest first. Versions are x-numbers while Box Ctrl is a public beta.
 
+## x0.1.13 · 2026-11-18
+- The icon library moves to Icon Ctrl's Print set x0.0.10: 193 icons. New is a Health group for a first-aid or medicine box, with a first-aid kit, bandages, gauze, medical tape, pill bottles, a thermometer and a blood pressure monitor among them. Also new are computer things such as a laptop, a hard drive, a USB stick and a Wi-Fi router, a phone, tablet, headphones and remote, and coin and 9-volt battery cells. Every icon your lists already use is unchanged.
+
 ## x0.1.12 · 2026-11-07
 - The icon library moves to Icon Ctrl's Print set x0.0.9: 159 icons. New are a printer, a label printer, a 3D printer and a toner cartridge, electrical and double-sided tape, and machine and self-drilling screws. Every icon your lists already use is unchanged.
 
